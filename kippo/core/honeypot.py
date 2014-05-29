@@ -21,9 +21,10 @@ import commands
 import ConfigParser
 
 class HoneyPotCommand(object):
-    def __init__(self, honeypot, *args):
+    def __init__(self, honeypot, *args, **kwargs):
         self.honeypot = honeypot
         self.args = args
+        self.env = kwargs
         self.writeln = self.honeypot.writeln
         self.write = self.honeypot.terminal.write
         self.nextLine = self.honeypot.terminal.nextLine
@@ -124,7 +125,11 @@ class HoneyPotShell(object):
         if cmdclass:
             print 'Command found: %s' % (line,)
             self.honeypot.logDispatch('Command found: %s' % (line,))
-            self.honeypot.call_command(cmdclass, *rargs)
+
+            if getattr(cmdclass, 'resolve_args', False):
+                self.honeypot.call_command(cmdclass, *rargs, **envvars)
+            else:
+                self.honeypot.call_command(cmdclass, *args, **envvars)
         else:
             self.honeypot.logDispatch('Command not found: %s' % (line,))
             print 'Command not found: %s' % (line,)
@@ -137,10 +142,16 @@ class HoneyPotShell(object):
         self.runCommand()
 
     def showPrompt(self):
+        # Example: nas3:~#
+        #prompt = '%s:%%(path)s' % self.honeypot.hostname
+        # Example: root@nas3:~#     (More of a "Debianu" feel)
+        prompt = '%s@%s:%%(path)s' % (self.honeypot.user.username, self.honeypot.hostname,)
+        # Example: [root@nas3 ~]#   (More of a "CentOS" feel)
+        #prompt = '[%s@%s %%(path)s]' % (self.honeypot.user.username, self.honeypot.hostname,)
         if not self.honeypot.user.uid:
-            prompt = '%s:%%(path)s# ' % self.honeypot.hostname
+            prompt += '# '    # "Root" user
         else:
-            prompt = '%s:%%(path)s$ ' % self.honeypot.hostname
+            prompt += '$ '    # "Non-Root" user
 
         path = self.honeypot.cwd
         homelen = len(self.honeypot.user.home)
@@ -149,6 +160,11 @@ class HoneyPotShell(object):
         elif len(path) > (homelen+1) and \
                 path[:(homelen+1)] == self.honeypot.user.home + '/':
             path = '~' + path[homelen:]
+        # Uncomment the three lines below for a 'better' CenOS look.
+        # Rather than '[root@nas3 /var/log]#' is shows '[root@nas3 log]#'.
+        #path = path.rsplit('/', 1)[-1]
+        #if not path:
+        #    path = '/'
 
         attrs = {'path': path}
         self.honeypot.terminal.write(prompt % attrs)
@@ -357,8 +373,8 @@ class HoneyPotProtocol(recvline.HistoricRecvLine):
         self.terminal.write(data)
         self.terminal.nextLine()
 
-    def call_command(self, cmd, *args):
-        obj = cmd(self, *args)
+    def call_command(self, cmd, *args, **kwargs):
+        obj = cmd(self, *args, **kwargs)
         self.cmdstack.append(obj)
         self.setTypeoverMode()
         obj.start()
