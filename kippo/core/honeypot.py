@@ -21,9 +21,10 @@ import commands
 import ConfigParser
 
 class HoneyPotCommand(object):
-    def __init__(self, honeypot, *args):
+    def __init__(self, honeypot, *args, **kwargs):
         self.honeypot = honeypot
         self.args = args
+        self.env = kwargs
         self.writeln = self.honeypot.writeln
         self.write = self.honeypot.terminal.write
         self.nextLine = self.honeypot.terminal.nextLine
@@ -124,7 +125,11 @@ class HoneyPotShell(object):
         if cmdclass:
             print 'Command found: %s' % (line,)
             self.honeypot.logDispatch('Command found: %s' % (line,))
-            self.honeypot.call_command(cmdclass, *rargs)
+
+            if getattr(cmdclass, 'resolve_args', False):
+                self.honeypot.call_command(cmdclass, *rargs, **envvars)
+            else:
+                self.honeypot.call_command(cmdclass, *args, **envvars)
         else:
             self.honeypot.logDispatch('Command not found: %s' % (line,))
             print 'Command not found: %s' % (line,)
@@ -368,8 +373,8 @@ class HoneyPotProtocol(recvline.HistoricRecvLine):
         self.terminal.write(data)
         self.terminal.nextLine()
 
-    def call_command(self, cmd, *args):
-        obj = cmd(self, *args)
+    def call_command(self, cmd, *args, **kwargs):
+        obj = cmd(self, *args, **kwargs)
         self.cmdstack.append(obj)
         self.setTypeoverMode()
         obj.start()
