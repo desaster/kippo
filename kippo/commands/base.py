@@ -291,6 +291,15 @@ class command_yes(HoneyPotCommand):
         self.exit()
 commands['/usr/bin/yes'] = command_yes
 
+class command_sh(HoneyPotCommand):
+    def call(self):
+        if len(self.args) and self.args[0].strip() == '-c':
+            self.honeypot.cmdstack[0].cmdpending.append( ' '.join( self.args[1:] ) )
+        else:
+            pass
+commands['/bin/bash'] = command_sh
+commands['/bin/sh'] = command_sh
+
 class command_nop(HoneyPotCommand):
     def call(self):
         pass
@@ -298,8 +307,6 @@ commands['/bin/chmod'] = command_nop
 commands['set'] = command_nop
 commands['unset'] = command_nop
 commands['export'] = command_nop
-commands['/bin/bash'] = command_nop
-commands['/bin/sh'] = command_nop
 commands['/bin/kill'] = command_nop
 commands['/bin/su'] = command_nop
 
