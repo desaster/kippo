@@ -134,7 +134,7 @@ private_key = private.key
 # SSH-2.0-OpenSSH_5.9
 #
 # (default: "SSH-2.0-OpenSSH_5.1p1 Debian-5")
-ssh_version_string = SSH-2.0-OpenSSH_5.1p1 Debian-5
+ssh_version_string = SSH-2.0-OpenSSH_6.0p1 Debian-4+deb7u1
 
 # Banner file to be displayed before the first login attempt.
 #
