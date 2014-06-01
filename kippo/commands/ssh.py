@@ -71,7 +71,7 @@ class command_ssh(HoneyPotCommand):
             self.honeypot.cwd = '/'
         self.honeypot.password_input = False
         self.writeln(
-            'Linux %s 2.6.26-2-686 #1 SMP Wed Nov 4 20:45:37 UTC 2009 i686' % \
+            'Linux %s 3.2.0-4-686-pae #1 SMP Debian 3.2.57-3+deb7u1 i686 GNU/Linux' % \
             self.honeypot.hostname)
         self.writeln('Last login: %s from 192.168.9.4' % \
             time.ctime(time.time() - 123123))
