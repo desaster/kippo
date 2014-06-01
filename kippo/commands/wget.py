@@ -125,7 +125,7 @@ commands['/usr/bin/wget'] = command_wget
 class HTTPProgressDownloader(client.HTTPDownloader):
     def __init__(self, wget, fakeoutfile, url, outfile, headers=None):
         client.HTTPDownloader.__init__(self, url, outfile, headers=headers,
-            agent='Wget/1.11.4')
+            agent='Wget/1.13.4 (linux-gnu)')
         self.status = None
         self.wget = wget
         self.fakeoutfile = fakeoutfile
