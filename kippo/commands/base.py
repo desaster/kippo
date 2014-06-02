@@ -7,6 +7,7 @@ from twisted.internet import reactor
 from kippo.core.config import config
 from kippo.core.userdb import UserDB
 from kippo.core import utils
+import re, socket
 
 commands = {}
 
@@ -60,6 +61,11 @@ class command_exit(HoneyPotCommand):
         self.honeypot.terminal.reset()
         self.writeln('Connection to server closed.')
         self.honeypot.hostname = 'localhost'
+        name, alias, addresslist = socket.gethostbyaddr(self.honeypot.clientIP)
+        name = name.split('.')[0]
+        r = re.compile('^[-a-zA-Z0-9]+$')
+        if r.match(name):
+            self.honeypot.hostname = name
         self.honeypot.cwd = '/root'
         if not self.fs.exists(self.honeypot.cwd):
             self.honeypot.cwd = '/'
@@ -234,6 +240,11 @@ class command_shutdown(HoneyPotCommand):
     def finish(self):
         self.writeln('Connection to server closed.')
         self.honeypot.hostname = 'localhost'
+        name, alias, addresslist = socket.gethostbyaddr(self.honeypot.clientIP)
+        name = name.split('.')[0]
+        r = re.compile('^[-a-zA-Z0-9]+$')
+        if r.match(name):
+            self.honeypot.hostname = name
         self.honeypot.cwd = '/root'
         if not self.fs.exists(self.honeypot.cwd):
             self.honeypot.cwd = '/'
@@ -253,6 +264,11 @@ class command_reboot(HoneyPotCommand):
     def finish(self):
         self.writeln('Connection to server closed.')
         self.honeypot.hostname = 'localhost'
+        name, alias, addresslist = socket.gethostbyaddr(self.honeypot.clientIP)
+        name = name.split('.')[0]
+        r = re.compile('^[-a-zA-Z0-9]+$')
+        if r.match(name):
+            self.honeypot.hostname = name
         self.honeypot.cwd = '/root'
         if not self.fs.exists(self.honeypot.cwd):
             self.honeypot.cwd = '/'
