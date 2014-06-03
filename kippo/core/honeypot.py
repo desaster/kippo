@@ -113,6 +113,45 @@ class HoneyPotShell(object):
             runOrPrompt()
             return
 
+        if len(args) > 0 and ('<' == args[-1] or '>' == args[-1] or '|' == args[-1]):
+            print 'The attacker failed to a pipe command.'
+            self.honeypot.logDispatch('The attacker failed to a pipe command.')
+
+            if '<' == args[-1] or '>' == args[-1]:
+                self.honeypot.writeln('bash: syntax error near unexpected token `newline\'')
+            elif '|' == args[-1]:
+                self.honeypot.writeln('bash: syntax error: unexpected end of file')
+            self.cmdpending = []
+            self.showPrompt()
+            return
+
+        i = 0
+        for arg in args:
+            i += 1
+            if '<' == arg[-1:] or '>' == arg[-1:] or '|' == arg[-1:]:
+                print 'The attacker is trying to a pipe command.'
+                self.honeypot.logDispatch('The attacker is trying to a pipe command.')
+
+                if '<' == arg[-1:]:
+                    #path = args[i]
+                    #if self.fs.exists(path):
+                    #    continue
+                    #else:
+                    #    self.writeln('bash: no such file or directory: %s' % (path,))
+                    self.honeypot.writeln('')
+                    self.cmdpending = []
+                    self.showPrompt()
+                    return
+                elif '>' == arg[-1:]:
+                    self.cmdpending = []
+                    self.showPrompt()
+                    return
+                elif '|' == arg[-1:]:
+                    cmd = args[i]
+                    args = args[i+1:]
+                    print 'NEW CMD: %s' % cmd
+                    print 'NEW ARGS: %s' % args
+
         rargs = []
         for arg in args:
             matches = self.honeypot.fs.resolve_path_wc(arg, self.honeypot.cwd)
@@ -137,11 +176,11 @@ class HoneyPotShell(object):
         self.runCommand()
 
     def showPrompt(self):
-        # Example: svr03:~#
+        # Example: nas3:~#
         #prompt = '%s:%%(path)s' % self.honeypot.hostname
-        # Example: root@svr03:~#     (More of a "Debianu" feel)
+        # Example: root@nas3:~#     (More of a "Debianu" feel)
         prompt = '%s@%s:%%(path)s' % (self.honeypot.user.username, self.honeypot.hostname,)
-        # Example: [root@svr03 ~]#   (More of a "CentOS" feel)
+        # Example: [root@nas3 ~]#   (More of a "CentOS" feel)
         #prompt = '[%s@%s %%(path)s]' % (self.honeypot.user.username, self.honeypot.hostname,)
         if not self.honeypot.user.uid:
             prompt += '# '    # "Root" user
@@ -156,7 +195,7 @@ class HoneyPotShell(object):
                 path[:(homelen+1)] == self.honeypot.user.home + '/':
             path = '~' + path[homelen:]
         # Uncomment the three lines below for a 'better' CenOS look.
-        # Rather than '[root@svr03 /var/log]#' is shows '[root@svr03 log]#'.
+        # Rather than '[root@nas3 /var/log]#' is shows '[root@nas3 log]#'.
         #path = path.rsplit('/', 1)[-1]
         #if not path:
         #    path = '/'
