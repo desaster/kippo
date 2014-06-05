@@ -16,6 +16,7 @@ import sys, os, random, pickle, time, stat, shlex, anydbm
 from kippo.core import ttylog, fs, utils
 from kippo.core.userdb import UserDB
 from kippo.core.config import config
+from kippo.core.sendemail import sendEmail
 import commands
 
 import ConfigParser
@@ -515,6 +516,7 @@ class HoneyPotTransport(transport.SSHServerTransport):
     hadVersion = False
 
     def connectionMade(self):
+        cfg = config()
         print 'New connection: %s:%s (%s:%s) [session: %d]' % \
             (self.transport.getPeer().host, self.transport.getPeer().port,
             self.transport.getHost().host, self.transport.getHost().port,
@@ -522,6 +524,14 @@ class HoneyPotTransport(transport.SSHServerTransport):
         self.interactors = []
         self.logintime = time.time()
         self.ttylog_open = False
+        if cfg.has_option('smtp', 'alert_probe'):
+            if cfg.get('smtp', 'alert_probe') == 'true':
+                print 'Emailing about SSH probe (alert_probe = true).'
+                emailMessage = 'There was an SSH probe request.\nFrom: %s:%s.\nTo: %s:%s.\nKippo Session: %s.' % \
+                    (self.transport.getPeer().host, self.transport.getPeer().port,
+                    self.transport.getHost().host, self.transport.getHost().port,
+                    self.transport.sessionno)
+                sendEmail('[Kippo] SSH Probe',  emailMessage)
         transport.SSHServerTransport.connectionMade(self)
 
     def sendKexInit(self):
@@ -554,6 +564,7 @@ class HoneyPotTransport(transport.SSHServerTransport):
 
     # this seems to be the only reliable place of catching lost connection
     def connectionLost(self, reason):
+        cfg = config()
         for i in self.interactors:
             i.sessionClosed()
         if self.transport.sessionno in self.factory.sessions:
@@ -562,6 +573,11 @@ class HoneyPotTransport(transport.SSHServerTransport):
         if self.ttylog_open:
             ttylog.ttylog_close(self.ttylog_file, time.time())
             self.ttylog_open = False
+        if cfg.has_option('smtp', 'alert_quit'):
+            if cfg.get('smtp', 'alert_quit') == 'true':
+                print 'Emailing about attack being over (alert_quit = true).'
+                emailMessage = 'The attacker quit.\n\nPlease check the logs (%s)!' % (self.ttylog_file)
+                sendEmail('[Kippo] SSH Attack Finished',  emailMessage)
         transport.SSHServerTransport.connectionLost(self, reason)
 
 from twisted.conch.ssh.common import NS, getNS
@@ -700,8 +716,14 @@ class HoneypotPasswordChecker:
         return defer.fail(error.UnauthorizedLogin())
 
     def checkUserPass(self, username, password):
+        cfg = config()
         if UserDB().checklogin(username, password):
             print 'login attempt [%s/%s] succeeded' % (username, password)
+            if cfg.has_option('smtp', 'alert_login'):
+                if cfg.get('smtp', 'alert_login') == 'true':
+                    print 'Emailing about login notification (alert_login = true).'
+                    emailMessage = 'There was a successful login: (%s/%s).' % (username, password)
+                    sendEmail('[Kippo] Successful Login',  emailMessage)
             return True
         else:
             print 'login attempt [%s/%s] failed' % (username, password)

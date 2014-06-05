@@ -147,6 +147,29 @@ interact_enabled = false
 # (default: 5123)
 interact_port = 5123
 
+# SMTP module
+#
+# Email notification on:
+#   + Probe (recommended for LAN use only)
+#   + Successful login
+#   + User quit
+#
+# You are able to use 'ssl' or 'tls' or 'none' to send the message by setting 'smtp_enc'.
+#
+# To enable this module, remove all comments below, including the [smtp] line.
+
+#[smtp]
+#smtp_host = smtp.localhost.net
+#smtp_username = localhost.net
+#smtp_password = password
+#smtp_port = 587
+#smtp_enc = tls
+#email_to = admin@localhost.net
+#email_from = kippo@localhost.net
+#alert_probe = false
+#alert_login = false
+#alert_quit = true
+
 # MySQL logging module
 #
 # Database structure for this module is supplied in doc/sql/mysql.sql
