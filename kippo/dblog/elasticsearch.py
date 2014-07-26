@@ -68,6 +68,9 @@ class DBLogger(dblog.DBLogger):
         self.session_id = uuid.uuid1().hex
         return self.session_id
 
+    def handleClientVersion(self, session, args):
+        self.client_version = args['version']
+
     def handleLoginAttempt(self, session, args, success):
         login_dict = collections.OrderedDict()
         login_dict['id'] = self.session_id
@@ -78,7 +81,7 @@ class DBLogger(dblog.DBLogger):
         login_dict['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
         login_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
         login_dict['ip'] = self.remote_ip
-        login_dict['client'] = args['version']
+        login_dict['client'] = self.client_version
         login_dict['sensor'] = self.sensor_ip
         auth_json = json.dumps(login_dict)
         #print auth_json
