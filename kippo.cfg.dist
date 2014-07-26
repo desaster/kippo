@@ -202,8 +202,8 @@ interact_port = 5123
 # To enable this module, remove the comments below, including the
 # [database_elasticsearch] line.
 
-[database_elasticsearch]
-host = 127.0.0.1
-port = 9200
-index = kippo
-type = auth
+#[database_elasticsearch]
+#host = 127.0.0.1
+#port = 9200
+#index = kippo
+#type = auth
