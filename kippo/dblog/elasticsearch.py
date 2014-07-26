@@ -49,7 +49,6 @@ kippo_mapping = {
 
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
-        self.geoip = GeoIP.open("geoip/GeoIP.dat", GeoIP.GEOIP_STANDARD)
         self.es_host = cfg.get('database_elasticsearch', 'host')
         self.es_port = cfg.get('database_elasticsearch', 'port')
         self.es_index = cfg.get('database_elasticsearch', 'index')
@@ -58,7 +57,7 @@ class DBLogger(dblog.DBLogger):
         self.run(cfg)
 
     def run(self, cfg):
-        #self.es_conn.indices.delete_index_if_exists(self.index)
+        self.geoip = GeoIP.open("geoip/GeoIP.dat", GeoIP.GEOIP_STANDARD)
         self.es_conn.indices.create_index_if_missing(self.es_index)
         self.es_conn.indices.put_mapping(self.es_type, {'properties': kippo_mapping}, [self.es_index])
 
@@ -84,7 +83,6 @@ class DBLogger(dblog.DBLogger):
         login_dict['client'] = self.client_version
         login_dict['sensor'] = self.sensor_ip
         auth_json = json.dumps(login_dict)
-        #print auth_json
         self.es_conn.index(auth_json, self.es_index, self.es_type)
 
     def handleLoginFailed(self, session, args):
