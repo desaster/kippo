@@ -58,7 +58,7 @@ class DBLogger(dblog.DBLogger):
         self.run(cfg)
 
     def run(self, cfg):
-        #self.es.indices.delete_index_if_exists(self.index)
+        #self.es_conn.indices.delete_index_if_exists(self.index)
         self.es_conn.indices.create_index_if_missing(self.es_index)
         self.es_conn.indices.put_mapping(self.es_type, {'properties': kippo_mapping}, [self.es_index])
 
