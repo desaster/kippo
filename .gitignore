@@ -8,6 +8,8 @@ data/ssh_host_rsa_key.pub
 dl/*
 log/kippo.log
 log/tty/*
+private.key
+public.key
 
 # Created by .gitignore support plugin (hsz.mobi)
 
