@@ -15,9 +15,6 @@ kippo_mapping = {
     "country": {
         "type": "string"
     },
-    "id": {
-        "type": "string"
-    },
     "ip": {
         "type": "string",
         "index": "not_analyzed"
@@ -64,15 +61,14 @@ class DBLogger(dblog.DBLogger):
     def createSession(self, peerIP, peerPort, hostIP, hostPort):
         self.remote_ip = peerIP
         self.sensor_ip = self.getSensor() or hostIP
-        self.session_id = uuid.uuid1().hex
-        return self.session_id
+        sid = uuid.uuid1().hex
+        return sid
 
     def handleClientVersion(self, session, args):
         self.client_version = args['version']
 
     def handleLoginAttempt(self, session, args, success):
         login_dict = collections.OrderedDict()
-        login_dict['id'] = self.session_id
         login_dict['session'] = session
         login_dict['success'] = success
         login_dict['username'] = args['username']
