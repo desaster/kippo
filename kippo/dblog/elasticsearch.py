@@ -16,7 +16,7 @@ kippo_mapping = {
         "type": "string"
     },
     "id": {
-        "type": "long"
+        "type": "string"
     },
     "ip": {
         "type": "string",
