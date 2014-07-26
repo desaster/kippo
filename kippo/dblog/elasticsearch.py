@@ -78,7 +78,7 @@ class DBLogger(dblog.DBLogger):
         login_dict['success'] = success
         login_dict['username'] = args['username']
         login_dict['password'] = args['password']
-        login_dict['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
+        login_dict['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
         login_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
         login_dict['ip'] = self.remote_ip
         login_dict['client'] = self.client_version
