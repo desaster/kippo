@@ -5,6 +5,7 @@ import GeoIP
 import time
 import json
 import uuid
+import os
 
 # This is the ES mapping, we mostly need it to mark specific fields as "not_analyzed"
 kippo_mapping = {
@@ -54,7 +55,7 @@ class DBLogger(dblog.DBLogger):
         self.run(cfg)
 
     def run(self, cfg):
-        self.geoip = GeoIP.open("geoip/GeoIP.dat", GeoIP.GEOIP_STANDARD)
+        self.geoip = GeoIP.open(os.path.join(os.path.dirname(__file__), "geoip/GeoIP.dat"), GeoIP.GEOIP_STANDARD)
         self.es_conn.indices.create_index_if_missing(self.es_index)
         self.es_conn.indices.put_mapping(self.es_type, {'properties': kippo_mapping}, [self.es_index])
 
