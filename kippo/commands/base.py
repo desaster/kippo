@@ -442,6 +442,19 @@ class command_php(HoneyPotCommand):
         print 'INPUT (php):', line
 commands['/usr/bin/php'] = command_php
 
+class command_chattr(HoneyPotCommand):
+    def call(self):
+        if len(self.args) < 1:
+            self.writeln('Usage: chattr [-RVf] [-+=AacDdeijsSu] [-v version] files...')
+            return
+        elif len(self.args) < 2:
+            self.writeln("Must use '-v', =, - or +'")
+            return
+        if not self.fs.exists(self.args[1]):
+            self.writeln('chattr: No such file or directory while trying to stat ' + self.args[1])
+        return
+commands['/usr/bin/chattr'] = command_chattr
+
 class command_nop(HoneyPotCommand):
     def call(self):
         pass
@@ -454,6 +467,5 @@ commands['/bin/kill'] = command_nop
 commands['/bin/su'] = command_nop
 commands['/bin/chown'] = command_nop
 commands['/bin/chgrp'] = command_nop
-commands['/usr/bin/chattr'] = command_nop
 
 # vim: set sw=4 et:
