@@ -18,3 +18,5 @@ __pycache__/
 env/
 env1/
 env2/
+
+sftp-config.json
