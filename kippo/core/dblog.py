@@ -71,10 +71,12 @@ class DBLogger(object):
 
         # Test for IPv4
         match = self.re_connected_ipv4.match(ev['message'][0])
+        ipv = 4
 
         # Test for IPv6
         if not match:
             match = self.re_connected_ipv6.match(ev['message'][0])
+            ipv = 6
 
         # If IPv4 or IPv6 then we golden!
         if match:
@@ -82,7 +84,7 @@ class DBLogger(object):
             self.sessions[sessionid] = \
                 self.createSession(
                     match.groups()[0], int(match.groups()[1]),
-                    match.groups()[2], int(match.groups()[3]))
+                    match.groups()[2], int(match.groups()[3]), ipv)
             return
         match = self.re_sessionlog.match(ev['system'])
         if not match:
@@ -113,7 +115,7 @@ class DBLogger(object):
         return ttylog
 
     # We have to return an unique ID
-    def createSession(self, peerIP, peerPort, hostIP, hostPort):
+    def createSession(self, peerIP, peerPort, hostIP, hostPort, versionIP):
         return 0
 
     # args has: logfile

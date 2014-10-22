@@ -1,0 +1,4 @@
+ALTER TABLE `sessions` CHANGE `ip` `ip` VARCHAR(45) NOT NULL DEFAULT '';
+ALTER TABLE `sensors` CHANGE `ip` `ip` VARCHAR(45) NOT NULL DEFAULT '';
+ALTER TABLE `sessions` ADD `version` TINYINT NOT NULL AFTER `sensor`;
+ALTER TABLE `sensors` ADD `version` TINYINT NOT NULL AFTER `id`;

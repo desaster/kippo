@@ -53,14 +53,14 @@ class DBLogger(dblog.DBLogger):
         d = self.db.runQuery(sql, args)
         d.addErrback(self.sqlerror)
 
-    def createSession(self, peerIP, peerPort, hostIP, hostPort):
+    def createSession(self, peerIP, peerPort, hostIP, hostPort, versionIP):
         sid = uuid.uuid1().hex
-        self.createSessionWhenever(sid, peerIP, hostIP)
+        self.createSessionWhenever(sid, peerIP, hostIP, versionIP)
         return sid
 
     # This is separate since we can't return with a value
     @defer.inlineCallbacks
-    def createSessionWhenever(self, sid, peerIP, hostIP):
+    def createSessionWhenever(self, sid, peerIP, hostIP, versionIP):
         sensorname = self.getSensor() or hostIP
         r = yield self.db.runQuery(
             'SELECT `id` FROM `sensors` WHERE `ip` = %s', (sensorname,))
@@ -68,14 +68,14 @@ class DBLogger(dblog.DBLogger):
             id = r[0][0]
         else:
             yield self.db.runQuery(
-                'INSERT INTO `sensors` (`ip`) VALUES (%s)', (sensorname,))
+                'INSERT INTO `sensors` (`version`, `ip`) VALUES (%s, %s)', (versionIP, sensorname,))
             r = yield self.db.runQuery('SELECT LAST_INSERT_ID()')
             id = int(r[0][0])
         # now that we have a sensorID, continue creating the session
         self.simpleQuery(
-            'INSERT INTO `sessions` (`id`, `starttime`, `sensor`, `ip`)' + \
-            ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
-            (sid, self.nowUnix(), id, peerIP))
+            'INSERT INTO `sessions` (`id`, `starttime`, `sensor`, `version`, `ip`)' + \
+            ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s, %s)',
+            (sid, self.nowUnix(), id, versionIP, peerIP))
 
     def handleConnectionLost(self, session, args):
         ttylog = self.ttylog(session)
