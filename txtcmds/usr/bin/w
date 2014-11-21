@@ -1,4 +1,0 @@
- 23:56:43 up 16:55,  2 users,  load average: 0.02, 0.02, 0.05
-USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
-root    pts/0    192.168.1.1    Wed14   11:55   2.31s  0.08s sshd: root [priv]  
-root    pts/2    192.168.1.1    Wed14    3.00s  3.75s  0.00s w
