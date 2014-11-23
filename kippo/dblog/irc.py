@@ -3,31 +3,31 @@ from asyncirc.ircbot import IRCBot
 import uuid
 
 class DBLogger(dblog.DBLogger):
-    def start(self, cfg):
-        if cfg.has_option('database_irc', 'port'):
+    def start(self):
+        if self.cfg.has_option('database_irc', 'port'):
             port = int(cfg.get('database_irc', 'port'))
         else:
             port = 6667
 
         nick = self.getSensor()
-        if cfg.has_option('database_irc', 'nick'):
-            nick = cfg.get('database_irc', 'nick')
+        if self.cfg.has_option('database_irc', 'nick'):
+            nick = self.cfg.get('database_irc', 'nick')
         if nick is None:
             import random
             import string
             nick = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
 
         self.channels = ['kippo-events']
-        if cfg.has_option('database_irc', 'channel'):
-            self.channels = cfg.get('database_irc', 'channel').split(",")
+        if self.cfg.has_option('database_irc', 'channel'):
+            self.channels = self.cfg.get('database_irc', 'channel').split(",")
 
         server = 'irc.efnet.org'
-        if cfg.has_option('database_irc', 'server'):
-            server = cfg.get('database_irc', 'server')
+        if self.cfg.has_option('database_irc', 'server'):
+            server = self.cfg.get('database_irc', 'server')
 
         password = None
-        if cfg.has_option('database_irc', 'password'):
-            password = cfg.get('database_irc', 'password')
+        if self.cfg.has_option('database_irc', 'password'):
+            password = self.cfg.get('database_irc', 'password')
 
         self.connection = IRCBot(server, port, nick, nick, 'Kippo', password)
         self.connection.start()
