@@ -17,7 +17,7 @@ class DBLogger(dblog.DBLogger):
             import string
             nick = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
 
-        self.channels = ['kippo-events']
+        self.channels = ['#kippo-events']
         if cfg.has_option('database_irc', 'channel'):
             self.channels = cfg.get('database_irc', 'channel').split(",")
 
@@ -31,6 +31,7 @@ class DBLogger(dblog.DBLogger):
 
         self.connection = IRCBot(server, port, nick, nick, 'Kippo', password)
         self.connection.start()
+
         for channel in self.channels:
             self.connection.join(channel)
 
