@@ -1,9 +1,6 @@
 from kippo.core import dblog
-from twisted.internet import defer
-from twisted.python import log
-from twisted.python import log
 from asyncirc.ircbot import IRCBot
-import threading
+import uuid
 
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
@@ -44,7 +41,6 @@ class DBLogger(dblog.DBLogger):
 
     def createSession(self, peerIP, peerPort, hostIP, hostPort):
         sid = uuid.uuid1().hex
-        sensorname = self.getSensor() or hostIP
         self.write(sid, 'New connection: %s:%s' % (peerIP, peerPort))
         return sid
 
