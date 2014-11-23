@@ -1,11 +1,9 @@
 from kippo.core import dblog
 from asyncirc.ircbot import IRCBot
-import logging
 import uuid
 
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
-        logging.basicConfig(filename='debug.log', level=logging.DEBUG)
         if cfg.has_option('database_irc', 'port'):
             port = int(cfg.get('database_irc', 'port'))
         else:
@@ -34,14 +32,10 @@ class DBLogger(dblog.DBLogger):
         self.connection = IRCBot(server, port, nick, nick, 'Kippo', password)
         self.connection.start()
 
-        print "Connected to %s/%s" % (server, port)
-
-        print "Joining %s" % self.channel
         self.connection.join(self.channel)
 
     def write(self, session, message):
         self.connection.msg(self.channel, "[%s] %s" % (session, message))
-        print "Sending to %s: [%s] %s" % (self.channel, session, message)
 
     def createSession(self, peerIP, peerPort, hostIP, hostPort):
         sid = uuid.uuid1().hex
