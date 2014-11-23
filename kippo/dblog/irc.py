@@ -32,11 +32,7 @@ class DBLogger(dblog.DBLogger):
         if cfg.has_option('database_irc', 'password'):
             password = cfg.get('database_irc', 'password')
 
-        ssl =  False
-        if cfg.has_option('database_irc', 'ssl'):
-            ssl = cfg.get('database_irc', 'ssl') in ('1', 'true', 'yes')
-
-        self.connection = IRCBot(server, port, nick, 'Kippo', password, ssl)
+        self.connection = IRCBot(server, port, nick, nick, 'Kippo', password)
         self.connection.start()
         for channel in self.channels:
             self.connection.join(channel)
