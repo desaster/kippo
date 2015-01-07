@@ -13,7 +13,7 @@ then
 	for i in $file; do
 		python /opt/kippo/utils/playlog.py /opt/kippo/log/tty/$i -m 1 > /opt/kippo/log/played/$i
 		mv /opt/kippo/log/tty/$i /opt/kippo/log/tty/old/
-		unix2dos /opt/kippo/log/played/$i
+		unix2dos -f /opt/kippo/log/played/$i
 		sendEmail -f [FROM@ADDRESS.COM] -t [TO@ADDRESS.COM] -u "Kippo Honeypot Breached" -m "A Kippo Honeypot [$hostname] located at [$host] has been breached. A log of the attacker's activities has been attached for review" -a /opt/kippo/log/played/$i -s [YOUR.MAIL.SERVER]:25 -o tls=no
 	done;
 else
