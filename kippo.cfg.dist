@@ -199,3 +199,10 @@ interact_port = 5123
 
 #[database_textlog]
 #logfile = kippo-textlog.log
+
+#[database_hpfeeds]
+#server = hpfeeds.mysite.org
+#port = 10000
+#identifier = abc123
+#secret = secret
+#debug=false
