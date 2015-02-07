@@ -531,9 +531,12 @@ class HoneyPotTransport(transport.SSHServerTransport):
         transport.SSHServerTransport.sendKexInit(self)
 
     def dataReceived(self, data):
+        # Workaround libssh not working with Twisted Hydra not working (by mercolino)
+        isLibssh = data.find('libssh', data.find('SSH-')) != -1
+
         transport.SSHServerTransport.dataReceived(self, data)
         # later versions seem to call sendKexInit again on their own
-        if twisted.version.major < 11 and \
+        if (twisted.version.major < 11 or isLibssh) and \
                 not self.hadVersion and self.gotVersion:
             self.sendKexInit()
             self.hadVersion = True
