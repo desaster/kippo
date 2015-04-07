@@ -62,7 +62,7 @@ class UserDB(object):
         '''note that it allows multiple passwords for a single username'''
 
         for (login, uid, passwd) in self.userdb:
-            if login == thelogin and passwd in (thepasswd, '*'):
+            if login in (thelogin, '*') and passwd in (thepasswd, '*'):
                 return True
         return False
 
@@ -79,10 +79,15 @@ class UserDB(object):
         return False
 
     def getUID(self, loginname):
+        defuid = 1001
+
         for (login, uid, passwd) in self.userdb:
             if loginname == login:
                 return uid
-        return 1001
+            if login == '*':
+                defuid = uid
+
+        return defuid
 
     def allocUID(self):
         '''allocate the next UID'''
