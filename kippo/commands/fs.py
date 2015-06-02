@@ -1,11 +1,12 @@
 # Copyright (c) 2010 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import os, getopt
-from copy import deepcopy, copy
+import os
+import getopt
+import copy
+
 from kippo.core.honeypot import HoneyPotCommand
 from kippo.core.fs import *
-from twisted.internet import reactor
 
 commands = {}
 
@@ -32,7 +33,7 @@ class command_cd(HoneyPotCommand):
         try:
             newpath = self.fs.resolve_path(path, self.honeypot.cwd)
             newdir = self.fs.get_path(newpath)
-        except IndexError:
+        except:
             newdir = None
         if path == "-":
             self.writeln('bash: cd: OLDPWD not set')
@@ -56,7 +57,7 @@ class command_rm(HoneyPotCommand):
             path = self.fs.resolve_path(f, self.honeypot.cwd)
             try:
                 dir = self.fs.get_path('/'.join(path.split('/')[:-1]))
-            except IndexError:
+            except (IndexError, FileNotFound):
                 self.writeln(
                     'rm: cannot remove `%s\': No such file or directory' % f)
                 continue
@@ -81,7 +82,7 @@ class command_cp(HoneyPotCommand):
         try:
             optlist, args = getopt.gnu_getopt(self.args,
                 '-abdfiHlLPpRrsStTuvx')
-        except getopt.GetoptError, err:
+        except getopt.GetoptError as err:
             self.writeln('Unrecognized option')
             return
         recursive = False
@@ -131,7 +132,7 @@ class command_cp(HoneyPotCommand):
             if not recursive and self.fs.is_dir(resolv(src)):
                 self.writeln("cp: omitting directory `%s'" % (src,))
                 continue
-            s = deepcopy(self.fs.getfile(resolv(src)))
+            s = copy.deepcopy(self.fs.getfile(resolv(src)))
             if is_dir:
                 dir = self.fs.get_path(resolv(dest))
                 outfile = os.path.basename(src)
@@ -153,7 +154,7 @@ class command_mv(HoneyPotCommand):
 
         try:
             optlist, args = getopt.gnu_getopt(self.args, '-bfiStTuv')
-        except getopt.GetoptError, err:
+        except getopt.GetoptError as err:
             self.writeln('Unrecognized option')
             self.exit()
 

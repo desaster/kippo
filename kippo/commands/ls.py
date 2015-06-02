@@ -1,9 +1,11 @@
 # Copyright (c) 2009 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
+import stat
+import time
+
 from kippo.core.honeypot import HoneyPotCommand
 from kippo.core.fs import *
-import stat, time
 
 commands = {}
 
@@ -45,6 +47,7 @@ class command_ls(HoneyPotCommand):
     def do_ls_normal(self, path):
         try:
             files = self.honeypot.fs.get_path(path)
+            files.sort()
         except:
             self.honeypot.writeln(
                 'ls: cannot access %s: No such file or directory' % path)
@@ -76,6 +79,7 @@ class command_ls(HoneyPotCommand):
     def do_ls_l(self, path):
         try:
             files = self.honeypot.fs.get_path(path)[:]
+            files.sort()
         except:
             self.honeypot.writeln(
                 'ls: cannot access %s: No such file or directory' % path)
@@ -127,5 +131,6 @@ class command_ls(HoneyPotCommand):
 
             self.honeypot.writeln(l)
 commands['/bin/ls'] = command_ls
+commands['/bin/dir'] = command_ls
 
 # vim: set sw=4 et:

@@ -1,19 +1,20 @@
 # Copyright (c) 2009 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-from kippo.core.honeypot import HoneyPotCommand
-from kippo.core.fs import *
-from twisted.web import client
-from twisted.internet import reactor
-
-import stat
 import time
 import urlparse
-import random
 import re
 import exceptions
-import os.path
+import os
 import getopt
+import hashlib
+
+from twisted.web import client
+from twisted.internet import reactor
+from twisted.python import log
+
+from kippo.core.honeypot import HoneyPotCommand
+from kippo.core.fs import *
 
 commands = {}
 
@@ -46,8 +47,8 @@ def splitthousands( s, sep=','):
 class command_wget(HoneyPotCommand):
     def start(self):
         try:
-            optlist, args = getopt.getopt(self.args, 'O:')
-        except getopt.GetoptError, err:
+            optlist, args = getopt.getopt(self.args, 'cO:')
+        except getopt.GetoptError as err:
             self.writeln('Unrecognized option')
             self.exit()
             return
@@ -93,13 +94,15 @@ class command_wget(HoneyPotCommand):
         if cfg.has_option('honeypot', 'download_limit_size'):
             self.limit_size = int(cfg.get('honeypot', 'download_limit_size'))
 
+        self.download_path = cfg.get('honeypot', 'download_path')
+
         self.safeoutfile = '%s/%s_%s' % \
-            (cfg.get('honeypot', 'download_path'),
+            (self.download_path,
             time.strftime('%Y%m%d%H%M%S'),
             re.sub('[^A-Za-z0-9]', '_', url))
         self.deferred = self.download(url, outfile, self.safeoutfile)
         if self.deferred:
-            self.deferred.addCallback(self.success)
+            self.deferred.addCallback(self.success, outfile)
             self.deferred.addErrback(self.error, url)
 
     def download(self, url, fakeoutfile, outputfile, *args, **kwargs):
@@ -109,7 +112,7 @@ class command_wget(HoneyPotCommand):
             host = parsed.hostname
             port = parsed.port or (443 if scheme == 'https' else 80)
             path = parsed.path or '/'
-            if scheme == 'https' or port != 80:
+            if scheme == 'https':
                 self.writeln('Sorry, SSL not supported in this release')
                 self.exit()
                 return None
@@ -137,7 +140,36 @@ class command_wget(HoneyPotCommand):
         self.writeln('^C')
         self.connection.transport.loseConnection()
 
-    def success(self, data):
+    def success(self, data, outfile):
+        if not os.path.isfile(self.safeoutfile):
+            log.msg("there's no file " + self.safeoutfile)
+            self.exit()
+
+        shasum = hashlib.sha256(open(self.safeoutfile, 'rb').read()).hexdigest()
+        hash_path = '%s/%s' % (self.download_path, shasum)
+
+        # if we have content already, delete temp file
+        if not os.path.exists(hash_path):
+            os.rename(self.safeoutfile, hash_path)
+        else:
+            os.remove(self.safeoutfile)
+            log.msg("Not storing duplicate content " + shasum)
+
+        self.honeypot.logDispatch( format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
+            eventid='KIPP0007', url=self.url, outfile=hash_path, shasum=shasum )
+
+        log.msg( format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
+            eventid='KIPP0007', url=self.url, outfile=hash_path, shasum=shasum )
+
+        # link friendly name to hash
+        os.symlink( shasum, self.safeoutfile )
+
+        # FIXME: is this necessary?
+        self.safeoutfile = hash_path
+
+        # update the honeyfs to point to downloaded file
+        f = self.fs.getfile(outfile)
+        f[A_REALFILE] = hash_path
         self.exit()
 
     def error(self, error, url):
@@ -192,14 +224,10 @@ class HTTPProgressDownloader(client.HTTPDownloader):
                     (self.contenttype))
             if self.wget.limit_size > 0 and \
                     self.totallength > self.wget.limit_size:
-                print 'Not saving URL (%s) due to file size limit' % \
-                    (self.wget.url,)
+                log.msg( 'Not saving URL (%s) due to file size limit' % \
+                    (self.wget.url,) )
                 self.fileName = os.path.devnull
                 self.nomore = True
-            else:
-                msg = 'Saving URL (%s) to %s' % (self.wget.url, self.fileName)
-                self.wget.honeypot.logDispatch(msg)
-                print msg
             self.wget.writeln('Saving to: `%s' % self.fakeoutfile)
             self.wget.honeypot.terminal.nextLine()
 
@@ -212,7 +240,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             # if downloading files of unspecified size, this could happen:
             if not self.nomore and self.wget.limit_size > 0 and \
                     self.currentlength > self.wget.limit_size:
-                print 'File limit reached, not saving any more data!'
+                log.msg( 'File limit reached, not saving any more data!' )
                 self.nomore = True
                 self.file.close()
                 self.fileName = os.path.devnull
@@ -257,6 +285,8 @@ class HTTPProgressDownloader(client.HTTPDownloader):
         self.wget.fs.update_realfile(
             self.wget.fs.getfile(self.fakeoutfile),
             self.wget.safeoutfile)
+
+        self.wget.fileName = self.fileName
         return client.HTTPDownloader.pageEnd(self)
 
 # vim: set sw=4 et:

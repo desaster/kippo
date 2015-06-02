@@ -1,10 +1,15 @@
 # Copyright (c) 2009 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
+import random
+import tarfile
+import os
+
+from twisted.python import log
+
 from kippo.core.honeypot import HoneyPotCommand
 from kippo.core.fs import *
 from kippo.commands import dice, malware
-import time, random, tarfile, os
 
 commands = {}
 
@@ -78,7 +83,8 @@ class command_tar(HoneyPotCommand):
                 self.honeypot.commands[dest] = \
                     pick_handler(os.path.basename(dest), f.size)
             else:
-                print 'tar: skipping [%s]' % f.name
+                log.msg( 'tar: skipping [%s]' % f.name )
+
 commands['/bin/tar'] = command_tar
 
 # vim: set sw=4 et:

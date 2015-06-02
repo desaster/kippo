@@ -4,9 +4,6 @@
 #
 
 from kippo.core import dblog
-from twisted.enterprise import adbapi
-from twisted.internet import defer
-from twisted.python import log
 import time
 import uuid
 
@@ -20,7 +17,7 @@ class DBLogger(dblog.DBLogger):
         self.outfile.flush()
 
     def createSession(self, peerIP, peerPort, hostIP, hostPort):
-        sid = uuid.uuid1().hex
+        sid = uuid.uuid4().hex
         sensorname = self.getSensor() or hostIP
         self.write(sid, 'New connection: %s:%s' % (peerIP, peerPort))
         return sid
@@ -53,7 +50,7 @@ class DBLogger(dblog.DBLogger):
         self.write(session, 'Client version: [%s]' % (args['version'],))
 
     def handleFileDownload(self, session, args):
-        self.write(session, 'File download: [%s] -> %s' % \
-            (args['url'], args['outfile']))
+        self.write(session, 'File download: [%s] -> %s with SHA-256 %s' % \
+            (args['url'], args['outfile'], args['shasum']))
 
 # vim: set sw=4 et:

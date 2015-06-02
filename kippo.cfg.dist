@@ -4,15 +4,24 @@
 
 [honeypot]
 
+# Sensor name use to identify this kippo instance. Used by the database
+# logging modules such as mysql.
+#
+# If not specified, the logging modules will instead use the IP address of the
+# connection as the sensor name.
+#
+# (default: not specified)
+#sensor_name=myhostname
+
 # IP addresses to listen for incoming SSH connections.
 #
 # (default: 0.0.0.0) = any address
-#ssh_addr = 0.0.0.0
+#listen_addr = 0.0.0.0
 
 # Port to listen for incoming SSH connections.
 #
 # (default: 2222)
-ssh_port = 2222
+#listen_port = 2222
 
 # Hostname for the honeypot. Displayed by the shell prompt of the virtual
 # environment.
@@ -60,6 +69,24 @@ filesystem_file = fs.pickle
 # (default: data_path)
 data_path = data
 
+# Class that implements the checklogin() method.
+# 
+# Class must be defined in kippo/core/auth.py
+# Default is the 'UserDB' class which uses the password database.
+#
+# Alternatively the 'AuthRandom' class can be used, which will let
+# a user login after a random number of attempts.
+# It will also cache username/password combinations that allow login.
+#
+auth_class = UserDB
+# When AuthRandom is used also set the 
+#  auth_class_parameters: <min try>, <max try>, <maxcache>
+#  for example: 2, 5, 10 = allows access after randint(2,5) attempts
+#  and cache 10 combinations.
+#
+#auth_class = AuthRandom
+#auth_class_parameters = 2, 5, 10
+
 # Directory for creating simple commands that only output text.
 #
 # The command must be placed under this directory with the proper path, such
@@ -87,20 +114,14 @@ dsa_private_key = data/ssh_host_dsa_key
 # (default: false)
 exec_enabled = true
 
+# sftp_enabled enables the sftp subsystem
+sftp_enabled = true
+
 # IP address to bind to when opening outgoing connections. Used exclusively by
 # the wget command.
 #
 # (default: not specified)
 #out_addr = 0.0.0.0
-
-# Sensor name use to identify this honeypot instance. Used by the database
-# logging modules such as mysql.
-#
-# If not specified, the logging modules will instead use the IP address of the
-# connection as the sensor name.
-#
-# (default: not specified)
-#sensor_name=myhostname
 
 # Fake address displayed as the address of the incoming connection.
 # This doesn't affect logging, and is only used by honeypot commands such as
@@ -111,6 +132,11 @@ exec_enabled = true
 #
 # (default: not specified)
 #fake_addr = 192.168.66.254
+
+# The IP address on which this machine reachable on from the internet.
+# Useful if you use portforwarding or other mechanisms. If empty, the kippo
+# will determine by itself. Used in 'netstat' output
+#internet_facing_ip = 9.9.9.9
 
 # SSH Version String
 #
@@ -140,8 +166,15 @@ ssh_version_string = SSH-2.0-OpenSSH_5.1p1 Debian-5
 
 # Banner file to be displayed before the first login attempt.
 #
-# (default: not specified)
-#banner_file =
+#banner_file = DEPRECATED; always '/etc/issue.net' in honeyfs
+
+# exit_jail tries to 'trick' the attacker with another shell. Set to true to create
+# another fake prompt after logout
+#
+# putty/sshlib/libssh clients will not get the exit jail
+#
+# (default: false)
+exit_jail = false
 
 # Session management interface.
 #
@@ -198,4 +231,19 @@ interact_port = 5123
 # [database_textlog] line.
 
 #[database_textlog]
-#logfile = kippo-textlog.log
+#logfile = log/kippo-textlog.log
+
+# deprecated JSON based logging module
+#[database_jsonlog]
+#logfile = log/kippolog.json
+
+# new default output module
+[output_jsonlog]
+logfile = log/kippo.json
+
+#[database_hpfeeds]
+#server = hpfeeds.mysite.org
+#port = 10000
+#identifier = abc123
+#secret = secret
+#debug=false

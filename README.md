@@ -6,23 +6,13 @@ Kippo is a medium interaction SSH honeypot designed to log brute force attacks a
 
 Kippo is inspired, but not based on [Kojoney](http://kojoney.sourceforge.net/).
 
-## Demo
-
-Some interesting logs from a live Kippo installation below (viewable within a web browser with the help of Ajaxterm). Note that some commands may have been improved since these logs were recorded.
-
-  * [2009-11-22](http://kippo.rpg.fi/playlog/?l=20091122-075013-5055.log)
-  * [2009-11-23](http://kippo.rpg.fi/playlog/?l=20091123-003854-3359.log)
-  * [2009-11-23](http://kippo.rpg.fi/playlog/?l=20091123-012814-626.log)
-  * [2010-03-16](http://kippo.rpg.fi/playlog/?l=20100316-233121-1847.log)
-
 ## Features
 
 Some interesting features:
 * Fake filesystem with the ability to add/remove files. A full fake filesystem resembling a Debian 5.0 installation is included
 * Possibility of adding fake file contents so the attacker can 'cat' files such as /etc/passwd. Only minimal file contents are included
 * Session logs stored in an [UML Compatible](http://user-mode-linux.sourceforge.net/)  format for easy replay with original timings
-* Just like Kojoney, Kippo saves files downloaded with wget for later inspection
-* Trickery; ssh pretends to connect somewhere, exit doesn't really exit, etc
+* Kippo saves files downloaded with wget or uploaded with SFTP for later inspection
 
 ## Requirements
 
@@ -32,6 +22,7 @@ Software required:
 * Python 2.5+
 * Twisted 8.0+
 * PyCrypto
+* pyasn1
 * Zope Interface
 
 See Wiki for some installation instructions.
@@ -64,4 +55,4 @@ Maybe. See [FAQ](https://github.com/desaster/kippo/wiki/FAQ)
 
 ## I have some questions!
 
-I ~~am~~ _might be_ reachable via e-mail: *desaster* at *gmail* dot *com*, or as *desaster* on the *#honeypots* channel in the *freenode* IRC network.
+Please visit https://github.com/micheloosterhof/kippo/issues

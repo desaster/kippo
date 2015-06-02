@@ -1,22 +1,22 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import twisted
-from copy import deepcopy, copy
 import os
 import shlex
-
-from kippo.core import fs
-from kippo.core.config import config
-import kippo.core.exceptions
-from kippo import core
-
+import re
+import copy
 import pickle
 
+from twisted.python import log
+
+import fs
+from config import config
+
 class HoneyPotCommand(object):
-    def __init__(self, honeypot, *args):
-        self.honeypot = honeypot
+    def __init__(self, protocol, *args):
+        self.honeypot = protocol
         self.args = args
+        self.env = self.honeypot.cmdstack[0].envvars
         self.writeln = self.honeypot.writeln
         self.write = self.honeypot.terminal.write
         self.nextLine = self.honeypot.terminal.nextLine
@@ -34,12 +34,12 @@ class HoneyPotCommand(object):
         self.honeypot.cmdstack[-1].resume()
 
     def ctrl_c(self):
-        print 'Received CTRL-C, exiting..'
+        log.msg('Received CTRL-C, exiting..')
         self.writeln('^C')
         self.exit()
 
     def lineReceived(self, line):
-        print 'INPUT: %s' % line
+        log.msg('INPUT: %s' % line)
 
     def resume(self):
         pass
@@ -48,8 +48,8 @@ class HoneyPotCommand(object):
         pass
 
 class HoneyPotShell(object):
-    def __init__(self, honeypot, interactive = True):
-        self.honeypot = honeypot
+    def __init__(self, protocol, interactive=True):
+        self.honeypot = protocol
         self.interactive = interactive
         self.showPrompt()
         self.cmdpending = []
@@ -58,10 +58,13 @@ class HoneyPotShell(object):
             }
 
     def lineReceived(self, line):
-        print 'CMD: %s' % line
+        log.msg('CMD: %s' % line)
         line = line[:500]
-        for i in [x.strip() for x in line.strip().split(';')[:10]]:
+        comment = re.compile('^\s*#')
+        for i in [x.strip() for x in re.split(';|&&|\n', line.strip())[:10]]:
             if not len(i):
+                continue
+            if comment.match(i):
                 continue
             self.cmdpending.append(i)
         if len(self.cmdpending):
@@ -73,14 +76,18 @@ class HoneyPotShell(object):
         def runOrPrompt():
             if len(self.cmdpending):
                 self.runCommand()
-            else:
+            elif self.interactive:
                 self.showPrompt()
+            else:
+                self.honeypot.terminal.transport.session.sendEOF()
+                self.honeypot.terminal.transport.session.sendClose()
 
         if not len(self.cmdpending):
             if self.interactive:
                 self.showPrompt()
             else:
-                self.honeypot.terminal.transport.loseConnection()
+                self.honeypot.terminal.transport.session.sendEOF()
+                self.honeypot.terminal.transport.session.sendClose()
             return
 
         line = self.cmdpending.pop(0)
@@ -95,7 +102,7 @@ class HoneyPotShell(object):
             return
 
         # probably no reason to be this comprehensive for just PATH...
-        envvars = copy(self.envvars)
+        envvars = copy.copy(self.envvars)
         cmd = None
         while len(cmdAndArgs):
             piece = cmdAndArgs.pop(0)
@@ -120,12 +127,13 @@ class HoneyPotShell(object):
                 rargs.append(arg)
         cmdclass = self.honeypot.getCommand(cmd, envvars['PATH'].split(':'))
         if cmdclass:
-            print 'Command found: %s' % (line,)
-            self.honeypot.logDispatch('Command found: %s' % (line,))
+            log.msg(eventid='KIPP0005', input=line, format='Command found: %(input)s')
+            #self.honeypot.logDispatch('Command found: %s' % (line,))
             self.honeypot.call_command(cmdclass, *rargs)
         else:
-            self.honeypot.logDispatch('Command not found: %s' % (line,))
-            print 'Command not found: %s' % (line,)
+            log.msg(eventid='KIPP0006',
+                input=line, format='Command not found: %(input)s')
+            #self.honeypot.logDispatch('Command not found: %s' % (line,))
             if len(line):
                 self.honeypot.writeln('bash: %s: command not found' % cmd)
                 runOrPrompt()

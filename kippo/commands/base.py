@@ -1,9 +1,13 @@
 # Copyright (c) 2009 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import os, time, anydbm, datetime
-from kippo.core.honeypot import HoneyPotCommand
+import time
+import datetime
+
 from twisted.internet import reactor
+from twisted.python import log
+
+from kippo.core.honeypot import HoneyPotCommand
 from kippo.core.config import config
 from kippo.core.auth import UserDB
 from kippo.core import utils
@@ -14,6 +18,7 @@ class command_whoami(HoneyPotCommand):
     def call(self):
         self.writeln(self.honeypot.user.username)
 commands['/usr/bin/whoami'] = command_whoami
+commands['/usr/bin/users'] = command_whoami
 
 class command_uptime(HoneyPotCommand):
     def call(self):
@@ -23,6 +28,56 @@ class command_uptime(HoneyPotCommand):
         self.writeln(' %s up %s,  1 user,  load average: 0.00, 0.00, 0.00' % \
             (time.strftime('%H:%M:%S'), utils.uptime(self.honeypot.uptime())))
 commands['/usr/bin/uptime'] = command_uptime
+
+class command_help(HoneyPotCommand):
+    def call(self):
+        self.writeln("""GNU bash, version 4.2.37(1)-release (x86_64-pc-linux-gnu)
+These shell commands are defined internally.  Type `help' to see this list.
+Type `help name' to find out more about the function `name'.
+Use `info bash' to find out more about the shell in general.
+Use `man -k' or `info' to find out more about commands not in this list.
+
+A star (*) next to a name means that the command is disabled.
+
+ job_spec [&]                                                                                   history [-c] [-d offset] [n] or history -anrw [filename] or history -ps arg [arg...]
+ (( expression ))                                                                               if COMMANDS; then COMMANDS; [ elif COMMANDS; then COMMANDS; ]... [ else COMMANDS; ] fi
+ . filename [arguments]                                                                         jobs [-lnprs] [jobspec ...] or jobs -x command [args]
+ :                                                                                              kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]
+ [ arg... ]                                                                                     let arg [arg ...]
+ [[ expression ]]                                                                               local [option] name[=value] ...
+ alias [-p] [name[=value] ... ]                                                                 logout [n]
+ bg [job_spec ...]                                                                              mapfile [-n count] [-O origin] [-s count] [-t] [-u fd] [-C callback] [-c quantum] [array]
+ bind [-lpvsPVS] [-m keymap] [-f filename] [-q name] [-u name] [-r keyseq] [-x keyseq:shell-c>  popd [-n] [+N | -N]
+ break [n]                                                                                      printf [-v var] format [arguments]
+ builtin [shell-builtin [arg ...]]                                                              pushd [-n] [+N | -N | dir]
+ caller [expr]                                                                                  pwd [-LP]
+ case WORD in [PATTERN [| PATTERN]...) COMMANDS ;;]... esac                                     read [-ers] [-a array] [-d delim] [-i text] [-n nchars] [-N nchars] [-p prompt] [-t timeout>
+ cd [-L|[-P [-e]]] [dir]                                                                        readarray [-n count] [-O origin] [-s count] [-t] [-u fd] [-C callback] [-c quantum] [array]>
+ command [-pVv] command [arg ...]                                                               readonly [-aAf] [name[=value] ...] or readonly -p
+ compgen [-abcdefgjksuv] [-o option]  [-A action] [-G globpat] [-W wordlist]  [-F function] [>  return [n]
+ complete [-abcdefgjksuv] [-pr] [-DE] [-o option] [-A action] [-G globpat] [-W wordlist]  [-F>  select NAME [in WORDS ... ;] do COMMANDS; done
+ compopt [-o|+o option] [-DE] [name ...]                                                        set [-abefhkmnptuvxBCHP] [-o option-name] [--] [arg ...]
+ continue [n]                                                                                   shift [n]
+ coproc [NAME] command [redirections]                                                           shopt [-pqsu] [-o] [optname ...]
+ declare [-aAfFgilrtux] [-p] [name[=value] ...]                                                 source filename [arguments]
+ dirs [-clpv] [+N] [-N]                                                                         suspend [-f]
+ disown [-h] [-ar] [jobspec ...]                                                                test [expr]
+ echo [-neE] [arg ...]                                                                          time [-p] pipeline
+ enable [-a] [-dnps] [-f filename] [name ...]                                                   times
+ eval [arg ...]                                                                                 trap [-lp] [[arg] signal_spec ...]
+ exec [-cl] [-a name] [command [arguments ...]] [redirection ...]                               true
+ exit [n]                                                                                       type [-afptP] name [name ...]
+ export [-fn] [name[=value] ...] or export -p                                                   typeset [-aAfFgilrtux] [-p] name[=value] ...
+ false                                                                                          ulimit [-SHacdefilmnpqrstuvx] [limit]
+ fc [-e ename] [-lnr] [first] [last] or fc -s [pat=rep] [command]                               umask [-p] [-S] [mode]
+ fg [job_spec]                                                                                  unalias [-a] name [name ...]
+ for NAME [in WORDS ... ] ; do COMMANDS; done                                                   unset [-f] [-v] [name ...]
+ for (( exp1; exp2; exp3 )); do COMMANDS; done                                                  until COMMANDS; do COMMANDS; done
+ function name { COMMANDS ; } or name () { COMMANDS ; }                                         variables - Names and meanings of some shell variables
+ getopts optstring name [arg]                                                                   wait [id]
+ hash [-lr] [-p pathname] [-dt] [name ...]                                                      while COMMANDS; do COMMANDS; done
+ help [-dms] [pattern ...]                                                                      { COMMANDS ; }""")
+commands['help'] = command_help
 
 class command_w(HoneyPotCommand):
     def call(self):
@@ -34,7 +89,15 @@ class command_w(HoneyPotCommand):
             self.honeypot.clientIP[:17].ljust(17),
             time.strftime('%H:%M', time.localtime(self.honeypot.logintime))))
 commands['/usr/bin/w'] = command_w
-commands['/usr/bin/who'] = command_w
+
+class command_who(HoneyPotCommand):
+    def call(self):
+        self.writeln('%-8s pts/0        %s %s (%s)' % \
+            (self.honeypot.user.username,
+            time.strftime('%Y-%m-%d', time.localtime(self.honeypot.logintime)),
+            time.strftime('%H:%M', time.localtime(self.honeypot.logintime)),
+            self.honeypot.clientIP))
+commands['/usr/bin/who'] = command_who
 
 class command_echo(HoneyPotCommand):
     def call(self):
@@ -52,12 +115,17 @@ commands['exxxit'] = command_exxxit
 
 class command_exit(HoneyPotCommand):
     def call(self):
+        cfg = config()
+        self.exit_jail = False
+        if cfg.has_option('honeypot', 'exit_jail'):
+            if (cfg.get('honeypot', 'exit_jail') == "true"):
+                self.exit_jail = True
         if 'PuTTY' in self.honeypot.clientVersion or \
                 'libssh' in self.honeypot.clientVersion or \
-                'sshlib' in self.honeypot.clientVersion:
+                'sshlib' in self.honeypot.clientVersion or \
+                self.exit_jail is False:
             self.honeypot.terminal.loseConnection()
             return
-        self.honeypot.terminal.reset()
         self.writeln('Connection to server closed.')
         self.honeypot.hostname = 'localhost'
         self.honeypot.cwd = '/root'
@@ -70,21 +138,12 @@ class command_clear(HoneyPotCommand):
     def call(self):
         self.honeypot.terminal.reset()
 commands['/usr/bin/clear'] = command_clear
+commands['/usr/bin/reset'] = command_clear
 
 class command_hostname(HoneyPotCommand):
     def call(self):
         self.writeln(self.honeypot.hostname)
 commands['/bin/hostname'] = command_hostname
-
-class command_uname(HoneyPotCommand):
-    def call(self):
-        if len(self.args) and self.args[0].strip() in ('-a', '--all'):
-            self.writeln(
-                'Linux %s 2.6.26-2-686 #1 SMP Wed Nov 4 20:45:37 UTC 2009 i686 GNU/Linux' % \
-                self.honeypot.hostname)
-        else:
-            self.writeln('Linux')
-commands['/bin/uname'] = command_uname
 
 class command_ps(HoneyPotCommand):
     def call(self):
@@ -182,7 +241,9 @@ class command_passwd(HoneyPotCommand):
         self.exit()
 
     def lineReceived(self, line):
-        print 'INPUT (passwd):', line
+        #log.msg( 'INPUT (passwd):', line )
+        log.msg( eventid='KIPP0008', realm='passwd', input=line,
+            format='INPUT (%(realm)s): %(input)s' )
         self.password = line.strip()
         self.callbacks.pop(0)(line)
 commands['/usr/bin/passwd'] = command_passwd
@@ -193,16 +254,16 @@ class command_shutdown(HoneyPotCommand):
             output = (
                 "Usage:     shutdown [-akrhHPfnc] [-t secs] time [warning message]",
                 "-a:      use /etc/shutdown.allow ",
-                "-k:      don't really shutdown, only warn. " ,
-                "-r:      reboot after shutdown. " ,
-                "-h:      halt after shutdown. " ,
-                "-P:      halt action is to turn off power. " ,
-                "-H:      halt action is to just halt. " ,
-                "-f:      do a 'fast' reboot (skip fsck). " ,
-                "-F:      Force fsck on reboot. " ,
-                "-n:      do not go through \"init\" but go down real fast. " ,
-                "-c:      cancel a running shutdown. " ,
-                "-t secs: delay between warning and kill signal. " ,
+                "-k:      don't really shutdown, only warn. ",
+                "-r:      reboot after shutdown. ",
+                "-h:      halt after shutdown. ",
+                "-P:      halt action is to turn off power. ",
+                "-H:      halt action is to just halt. ",
+                "-f:      do a 'fast' reboot (skip fsck). ",
+                "-F:      Force fsck on reboot. ",
+                "-n:      do not go through \"init\" but go down real fast. ",
+                "-c:      cancel a running shutdown. ",
+                "-t secs: delay between warning and kill signal. ",
                 "** the \"time\" argument is mandatory! (try \"now\") **",
                 )
             for l in output:
@@ -239,6 +300,9 @@ class command_shutdown(HoneyPotCommand):
             self.honeypot.cwd = '/'
         self.exit()
 commands['/sbin/shutdown'] = command_shutdown
+commands['/sbin/poweroff'] = command_shutdown
+commands['/sbin/reboot'] = command_shutdown
+commands['/sbin/halt'] = command_shutdown
 
 class command_reboot(HoneyPotCommand):
     def start(self):
@@ -377,7 +441,10 @@ class command_perl(HoneyPotCommand):
             self.exit()
 
     def lineReceived(self, line):
-        print 'INPUT (perl):', line
+        #log.msg( 'INPUT (perl):', line )
+        log.msg( eventid='KIPP0008', realm='perl', input=line,
+            format='INPUT (%(realm)s): %(input)s' )
+
 commands['/usr/bin/perl'] = command_perl
 
 class command_php(HoneyPotCommand):
@@ -440,8 +507,24 @@ class command_php(HoneyPotCommand):
             self.exit()
 
     def lineReceived(self, line):
-        print 'INPUT (php):', line
+        #log.msg( 'INPUT (php):', line )
+        log.msg( eventid='KIPP0008', realm='php', input=line,
+            format='INPUT (%(realm)s): %(input)s' )
+
 commands['/usr/bin/php'] = command_php
+
+class command_chattr(HoneyPotCommand):
+    def call(self):
+        if len(self.args) < 1:
+            self.writeln('Usage: chattr [-RVf] [-+=AacDdeijsSu] [-v version] files...')
+            return
+        elif len(self.args) < 2:
+            self.writeln("Must use '-v', =, - or +'")
+            return
+        if not self.fs.exists(self.args[1]):
+            self.writeln('chattr: No such file or directory while trying to stat ' + self.args[1])
+        return
+commands['/usr/bin/chattr'] = command_chattr
 
 class command_nop(HoneyPotCommand):
     def call(self):
@@ -451,7 +534,10 @@ commands['set'] = command_nop
 commands['unset'] = command_nop
 commands['export'] = command_nop
 commands['alias'] = command_nop
+commands['jobs'] = command_nop
 commands['/bin/kill'] = command_nop
+commands['/bin/killall'] = command_nop
+commands['/bin/killall5'] = command_nop
 commands['/bin/su'] = command_nop
 commands['/bin/chown'] = command_nop
 commands['/bin/chgrp'] = command_nop

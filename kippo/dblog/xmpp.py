@@ -1,4 +1,5 @@
 from twisted.words.xish import domish
+from twisted.python import log
 from wokkel.xmppim import AvailablePresence
 from wokkel import muc
 import uuid
@@ -21,16 +22,16 @@ class XMPPLoggerProtocol(muc.MUCClient):
             self.join(self.server, i, self.nick).addCallback(self.initRoom)
 
     def initRoom(self, room):
-        print 'Joined room %s' % room.name
+        log.msg( 'Joined room %s' % room.name )
 
     def connectionMade(self):
-        print 'Connected!'
+        log.msg( 'Connected!' )
 
         # send initial presence
         self.send(AvailablePresence())
 
     def connectionLost(self, reason):
-        print 'Disconnected!'
+        logmsg( 'Disconnected!' )
 
     def onMessage(self, msg):
         pass

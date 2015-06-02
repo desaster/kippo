@@ -1,10 +1,11 @@
 # Copyright (c) 2010 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-from twisted.internet import reactor, defer
-from twisted.internet.defer import inlineCallbacks
+import random
+
+from twisted.internet import reactor
+
 from kippo.core.honeypot import HoneyPotCommand
-import random, re
 
 commands = {}
 

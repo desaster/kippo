@@ -3,12 +3,12 @@
 
 # Should be compatible with user mode linux
 
-import struct, sys
+import struct
 
 OP_OPEN, OP_CLOSE, OP_WRITE, OP_EXEC = 1, 2, 3, 4
 TYPE_INPUT, TYPE_OUTPUT, TYPE_INTERACT = 1, 2, 3
 
-def ttylog_write(logfile, len, direction, stamp, data = None):
+def ttylog_write(logfile, len, direction, stamp, data=None):
     f = file(logfile, 'ab')
     sec, usec = int(stamp), int(1000000 * (stamp - int(stamp)))
     f.write(struct.pack('<iLiiLL', 3, 0, len, direction, sec, usec))

@@ -1,10 +1,12 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
+import time
+
 from twisted.internet import protocol
 from twisted.conch import telnet, recvline
-from kippo.core import ttylog
-import time
+
+import ttylog
 
 class Interact(telnet.Telnet):
 
@@ -64,7 +66,7 @@ class Interact(telnet.Telnet):
             if not self.readonly:
                 if type(bytes) == type(''):
                     ttylog.ttylog_write(
-                        self.interacting.ttylog_file,
+                        self.interacting.terminal.transport.session.conn.transport.ttylog_file,
                         len(bytes), ttylog.TYPE_INTERACT, time.time(), bytes)
                 for c in bytes:
                     recvline.HistoricRecvLine.keystrokeReceived(
@@ -118,7 +120,7 @@ class Interact(telnet.Telnet):
                 session.realClientIP.ljust(15),
                 session.clientVersion))
 
-    def cmd_help(self, args = ''):
+    def cmd_help(self, args=''):
         self.transport.write('List of commands:\r\n')
         self.transport.write(' list       - list all active sessions\r\n')
         self.transport.write(
@@ -144,7 +146,7 @@ class Interact(telnet.Telnet):
                 return
         self.transport.write('** No such session found.\r\n')
 
-    def cmd_exit(self, args = ''):
+    def cmd_exit(self, args=''):
         self.transport.loseConnection()
 
 def makeInteractFactory(honeypotFactory):
