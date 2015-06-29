@@ -17,6 +17,8 @@ ssh_port = 2222
 # Source Port to report in logs (useful if you use iptables to forward ports to kippo)
 reported_ssh_port = 22
 
+report_public_ip = true
+
 # Hostname for the honeypot. Displayed by the shell prompt of the virtual
 # environment.
 #

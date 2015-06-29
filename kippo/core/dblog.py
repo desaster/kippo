@@ -44,6 +44,13 @@ class DBLogger(object):
         if self.cfg.has_option('honeypot', 'reported_ssh_port'):
             self.reported_ssh_port = int(cfg.get('honeypot', 'reported_ssh_port'))
 
+        self.report_public_ip = False
+        if self.cfg.has_option('honeypot', 'report_public_ip'):
+            if cfg.get('honeypot', 'report_public_ip') == "true" or cfg.get('honeypot', 'report_public_ip') == "1":
+                self.report_public_ip = True
+                import urllib
+                self.public_ip = urllib.urlopen('http://myip.threatstream.com').readline()
+
         self.start(cfg)
 
     def logDispatch(self, sessionid, msg):
@@ -77,6 +84,8 @@ class DBLogger(object):
             hostIP, hostPort = match.groups()[2], int(match.groups()[3])
             if self.reported_ssh_port:
                 hostPort = self.reported_ssh_port
+            if self.report_public_ip:
+                hostIP = self.public_ip
 
             self.sessions[sessionid] = self.createSession(
                 peerIP, peerPort, hostIP, hostPort
