@@ -39,6 +39,11 @@ class DBLogger(object):
             ('^Remote SSH version: (?P<version>.*)$',
                 self.handleClientVersion),
             )]
+
+        self.reported_ssh_port = None
+        if self.cfg.has_option('honeypot', 'reported_ssh_port'):
+            self.reported_ssh_port = int(cfg.get('honeypot', 'reported_ssh_port'))
+
         self.start(cfg)
 
     def logDispatch(self, sessionid, msg):
@@ -68,10 +73,14 @@ class DBLogger(object):
         match = self.re_connected.match(ev['message'][0])
         if match:
             sessionid = int(match.groups()[4])
-            self.sessions[sessionid] = \
-                self.createSession(
-                    match.groups()[0], int(match.groups()[1]),
-                    match.groups()[2], int(match.groups()[3]))
+            peerIP, peerPort = match.groups()[0], int(match.groups()[1])
+            hostIP, hostPort = match.groups()[2], int(match.groups()[3])
+            if self.reported_ssh_port:
+                hostPort = self.reported_ssh_port
+
+            self.sessions[sessionid] = self.createSession(
+                peerIP, peerPort, hostIP, hostPort
+            )
             return
         match = self.re_sessionlog.match(ev['system'])
         if not match:
