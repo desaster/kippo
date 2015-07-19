@@ -76,10 +76,16 @@ txtcmds_path = txtcmds
 
 # Public and private SSH key files. If these don't exist, they are created
 # automatically.
+rsa_public_key = data/ssh_host_rsa_key.pub
+rsa_private_key = data/ssh_host_rsa_key
+dsa_public_key = data/ssh_host_dsa_key.pub
+dsa_private_key = data/ssh_host_dsa_key
+
+# Enables passing commands using ssh execCommand
+# e.g. ssh root@localhost <command>
 #
-# (defaults: public.key and private.key)
-public_key = public.key
-private_key = private.key
+# (default: false)
+exec_enabled = true
 
 # IP address to bind to when opening outgoing connections. Used exclusively by
 # the wget command.
