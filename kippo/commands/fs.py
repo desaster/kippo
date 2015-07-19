@@ -89,6 +89,10 @@ class command_cp(HoneyPotCommand):
             if opt[0] in ('-r', '-a', '-R'):
                 recursive = True
 
+        # TODO: recursive disabled now, recursive needs to be
+        # implemented without deepcopy and with limits
+        recursive = False
+
         def resolv(path):
             return self.fs.resolve_path(path, self.honeypot.cwd)
 
