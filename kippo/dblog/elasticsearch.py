@@ -1,11 +1,16 @@
-from kippo.core import dblog
 import collections
-import pyes
 import GeoIP
 import time
 import json
 import uuid
 import os
+
+import pyes
+import pyes.exceptions
+from twisted.python import log
+
+from kippo.core import dblog
+
 
 # This is the ES mapping, we mostly need it to mark specific fields as "not_analyzed"
 kippo_mapping = {
@@ -65,6 +70,7 @@ kippo_mapping = {
     }
 }
 
+
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
         self.es_host = cfg.get('database_elasticsearch', 'host')
@@ -88,6 +94,13 @@ class DBLogger(dblog.DBLogger):
     def handleClientVersion(self, session, args):
         self.client_version = args['version']
 
+    def send_to_elasticsearch(self, json_doc):
+        try:
+            self.es_conn.index(json_doc)
+        except pyes.exceptions.ElasticSearchException, e:
+            log.msg("Elasticsearch error: " %(e))
+            pass
+
     def handleLoginAttempt(self, session, args, success):
         login_dict = collections.OrderedDict()
         login_dict['log_type'] = "login_attempt"
@@ -101,7 +114,7 @@ class DBLogger(dblog.DBLogger):
         login_dict['client'] = self.client_version
         login_dict['sensor'] = self.sensor_ip
         auth_json = json.dumps(login_dict)
-        self.es_conn.index(auth_json, self.es_index, self.es_type)
+        self.send_to_elasticsearch(auth_json)
 
     def handleLoginFailed(self, session, args):
         self.handleLoginAttempt(session, args, 0)
@@ -121,7 +134,7 @@ class DBLogger(dblog.DBLogger):
         command_dict['client'] = self.client_version
         command_dict['sensor'] = self.sensor_ip
         command_json = json.dumps(command_dict)
-        self.es_conn.index(command_json, self.es_index, self.es_type)
+        self.send_to_elasticsearch(command_json)
 
     def handleCommand(self, session, args):
         self.handleCommandAttempt(session, args, 1)
@@ -141,4 +154,4 @@ class DBLogger(dblog.DBLogger):
         download_dict['client'] = self.client_version
         download_dict['sensor'] = self.sensor_ip
         download_json = json.dumps(download_dict)
-        self.es_conn.index(download_json, self.es_index, self.es_type)
+        self.send_to_elasticsearch(download_json)
