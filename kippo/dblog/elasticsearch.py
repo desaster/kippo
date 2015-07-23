@@ -96,7 +96,7 @@ class DBLogger(dblog.DBLogger):
 
     def send_to_elasticsearch(self, json_doc):
         try:
-            self.es_conn.index(json_doc)
+            self.es_conn.index(json_doc, self.es_index, self.es_type)
         except pyes.exceptions.ElasticSearchException, e:
             log.msg("Elasticsearch error: " %(e))
             pass
