@@ -21,12 +21,9 @@ kippo_mapping = {
         "index": "not_analyzed"
     },
     "ip": {
-        "type": "multi_field",
+        "type": "ip",
         "fields": {
-            "ip": {
-                "type": "ip"
-            },
-            "ip_string": {
+            "raw": {
                 "type": "string",
                 "index": "not_analyzed"
             }
