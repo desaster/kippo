@@ -21,7 +21,16 @@ kippo_mapping = {
         "index": "not_analyzed"
     },
     "ip": {
-        "type": "ip",
+        "type": "multi_field",
+        "fields": {
+            "ip": {
+                "type": "ip"
+            },
+            "ip_string": {
+                "type": "string",
+                "index": "not_analyzed"
+            }
+        }
     },
     "log_type": {
         "type": "string"
