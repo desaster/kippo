@@ -21,11 +21,14 @@ kippo_mapping = {
         "index": "not_analyzed"
     },
     "ip": {
-        "type": "string",
-        "index": "not_analyzed"
+        "type": "ip",
     },
     "log_type": {
         "type": "string"
+    },
+    "outfile": {
+        "type": "string",
+        "index": "not_analyzed"
     },
     "password": {
         "type": "string",
@@ -40,11 +43,15 @@ kippo_mapping = {
         "index": "not_analyzed"
     },
     "success": {
-        "type": "long"
+        "type": "boolean"
     },
     "timestamp": {
         "type": "date",
         "format": "dateOptionalTime"
+    },
+    "url": {
+        "type": "string",
+        "index": "not_analyzed"
     },
     "username": {
         "type": "string",
