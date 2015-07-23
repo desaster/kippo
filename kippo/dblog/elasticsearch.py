@@ -95,11 +95,7 @@ class DBLogger(dblog.DBLogger):
         self.client_version = args['version']
 
     def send_to_elasticsearch(self, json_doc):
-        try:
-            self.es_conn.index(json_doc, self.es_index, self.es_type)
-        except pyes.exceptions.ElasticSearchException, e:
-            log.msg("Elasticsearch error: " %(e))
-            pass
+        self.es_conn.index(json_doc, self.es_index, self.es_type)
 
     def handleLoginAttempt(self, session, args, success):
         login_dict = collections.OrderedDict()
@@ -113,8 +109,8 @@ class DBLogger(dblog.DBLogger):
         login_dict['ip'] = self.remote_ip
         login_dict['client'] = self.client_version
         login_dict['sensor'] = self.sensor_ip
-        auth_json = json.dumps(login_dict)
-        self.send_to_elasticsearch(auth_json)
+        login_json = json.dumps(login_dict)
+        self.send_to_elasticsearch(login_json)
 
     def handleLoginFailed(self, session, args):
         self.handleLoginAttempt(session, args, 0)
