@@ -115,3 +115,17 @@ class DBLogger(dblog.DBLogger):
 
     def handleUnknownCommand(self, session, args):
         self.handleCommandAttempt(session, args, 0)
+
+    def handleFileDownload(self, session, args):
+        download_dict = collections.OrderedDict()
+        download_dict['log_type'] = "download"
+        download_dict['session'] = session
+        download_dict['url'] = args['url']
+        download_dict['outfile'] = args['outfile']
+        download_dict['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        download_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
+        download_dict['ip'] = self.remote_ip
+        download_dict['client'] = self.client_version
+        download_dict['sensor'] = self.sensor_ip
+        download_json = json.dumps(download_dict)
+        self.es_conn.index(download_json, self.es_index, self.es_type)
