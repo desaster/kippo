@@ -21,11 +21,11 @@ kippo_mapping = {
         "index": "not_analyzed"
     },
     "ip": {
-        "type": "ip",
+        "type": "string",
+        "index": "not_analyzed",
         "fields": {
-            "raw": {
-                "type": "string",
-                "index": "not_analyzed"
+            "ipv4": {
+                "type": "ip",
             }
         }
     },
