@@ -16,9 +16,16 @@ kippo_mapping = {
     "country": {
         "type": "string"
     },
+    "input": {
+        "type": "string",
+        "index": "not_analyzed"
+    },
     "ip": {
         "type": "string",
         "index": "not_analyzed"
+    },
+    "log_type": {
+        "type": "string"
     },
     "password": {
         "type": "string",
@@ -70,6 +77,7 @@ class DBLogger(dblog.DBLogger):
 
     def handleLoginAttempt(self, session, args, success):
         login_dict = collections.OrderedDict()
+        login_dict['log_type'] = "login_attempt"
         login_dict['session'] = session
         login_dict['success'] = success
         login_dict['username'] = args['username']
@@ -87,3 +95,23 @@ class DBLogger(dblog.DBLogger):
 
     def handleLoginSucceeded(self, session, args):
         self.handleLoginAttempt(session, args, 1)
+
+    def handleCommandAttempt(self, session, args, success):
+        command_dict = collections.OrderedDict()
+        command_dict['log_type'] = "command"
+        command_dict['session'] = session
+        command_dict['success'] = success
+        command_dict['input'] = args['input']
+        command_dict['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        command_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
+        command_dict['ip'] = self.remote_ip
+        command_dict['client'] = self.client_version
+        command_dict['sensor'] = self.sensor_ip
+        command_json = json.dumps(command_dict)
+        self.es_conn.index(command_json, self.es_index, self.es_type)
+
+    def handleCommand(self, session, args):
+        self.handleCommandAttempt(session, args, 1)
+
+    def handleUnknownCommand(self, session, args):
+        self.handleCommandAttempt(session, args, 0)
