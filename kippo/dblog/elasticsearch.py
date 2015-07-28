@@ -4,6 +4,7 @@ import time
 import json
 import uuid
 import os
+import datetime
 
 import pyes
 import pyes.exceptions
@@ -104,7 +105,7 @@ class DBLogger(dblog.DBLogger):
         login_dict['success'] = success
         login_dict['username'] = args['username']
         login_dict['password'] = args['password']
-        login_dict['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        login_dict['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
         login_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
         login_dict['ip'] = self.remote_ip
         login_dict['client'] = self.client_version
@@ -124,7 +125,7 @@ class DBLogger(dblog.DBLogger):
         command_dict['session'] = session
         command_dict['success'] = success
         command_dict['input'] = args['input']
-        command_dict['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        command_dict['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
         command_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
         command_dict['ip'] = self.remote_ip
         command_dict['client'] = self.client_version
@@ -144,7 +145,7 @@ class DBLogger(dblog.DBLogger):
         download_dict['session'] = session
         download_dict['url'] = args['url']
         download_dict['outfile'] = args['outfile']
-        download_dict['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        download_dict['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
         download_dict['country'] = self.geoip.country_code_by_addr(self.remote_ip)
         download_dict['ip'] = self.remote_ip
         download_dict['client'] = self.client_version
