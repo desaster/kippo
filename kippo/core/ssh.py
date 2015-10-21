@@ -5,6 +5,7 @@ import twisted
 from twisted.cred import portal
 from twisted.conch import avatar, interfaces as conchinterfaces
 from twisted.conch.ssh import factory, userauth, connection, keys, session, transport
+from twisted.conch.openssh_compat import primes
 from twisted.python import log
 from zope.interface import implements
 
@@ -92,6 +93,18 @@ class HoneyPotSSHFactory(factory.SSHFactory):
             self.dbloggers.append(dblogger)
 
     def buildProtocol(self, addr):
+        """
+        Create an instance of the server side of the SSH protocol.
+
+        @type addr: L{twisted.internet.interfaces.IAddress} provider
+        @param addr: The address at which the server will listen.
+
+        @rtype: L{twisted.conch.ssh.SSHServerTransport}
+        @return: The built transport.
+        """
+
+        _modulis = '/etc/ssh/moduli', '/private/etc/moduli'
+
         cfg = config()
 
         # FIXME: try to mimic something real 100%
@@ -103,6 +116,13 @@ class HoneyPotSSHFactory(factory.SSHFactory):
             t.ourVersionString = "SSH-2.0-OpenSSH_5.1p1 Debian-5"
 
         t.supportedPublicKeys = self.privateKeys.keys()
+
+        for _moduli in _modulis:
+            try:
+                self.primes = primes.parseModuliFile(_moduli)
+                break
+            except IOError as err:
+                pass
 
         if not self.primes:
             ske = t.supportedKeyExchanges[:]
