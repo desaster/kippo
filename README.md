@@ -30,7 +30,7 @@ Software required:
 
 * An operating system (tested on Debian, CentOS, FreeBSD and Windows 7)
 * Python 2.5+
-* Twisted 8.0+
+* Twisted 8.0 to 15.1.0
 * PyCrypto
 * Zope Interface
 
