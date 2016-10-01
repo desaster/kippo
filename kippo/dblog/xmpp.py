@@ -102,10 +102,11 @@ class DBLogger(dblog.DBLogger):
         self.muc.groupChat(to,  None, children=[body])
 
     # We have to return an unique ID
-    def createSession(self, peerIP, peerPort, hostIP, hostPort):
+    def createSession(self, peerIP, peerPort, hostIP, hostPort, versionIP):
         session = uuid.uuid4().hex
         ses = domish.Element((None, 'session'))
         ses['session'] = session
+        ses['remote_ipv'] = versionIP
         ses['remote_host'] = peerIP
         ses['remote_port'] = str(peerPort)
         if self.anonymous == True:

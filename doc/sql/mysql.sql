@@ -27,7 +27,8 @@ CREATE TABLE `input` (
 
 CREATE TABLE `sensors` (
   `id` int(11) NOT NULL auto_increment,
-  `ip` varchar(15) NOT NULL,
+  `version` TINYINT NOT NULL,
+  `ip` varchar(45) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ;
 
@@ -36,7 +37,8 @@ CREATE TABLE `sessions` (
   `starttime` datetime NOT NULL,
   `endtime` datetime default NULL,
   `sensor` int(4) NOT NULL,
-  `ip` varchar(15) NOT NULL default '',
+  `version` TINYINT NOT NULL,
+  `ip` varchar(45) NOT NULL default '',
   `termsize` varchar(7) default NULL,
   `client` int(4) default NULL,
   PRIMARY KEY  (`id`),
