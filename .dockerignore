@@ -1,0 +1,6 @@
+# configuration shouldn't be baked into the image
+kippo.cfg
+log
+data
+dl
+db/mysql/data/*

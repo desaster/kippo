@@ -161,10 +161,10 @@ interact_port = 5123
 # [database_mysql] line.
 
 #[database_mysql]
-#host = localhost
+#host = kippodb
 #database = kippo
 #username = kippo
-#password = secret
+#password = kippopw
 #port = 3306
 
 # XMPP Logging

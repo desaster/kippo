@@ -1,0 +1,42 @@
+# To run the kippo service, run:
+#   docker-compose up
+#
+# The database service belongs to the "with-db" profile, so it's not run by
+# default. To run the kippo service with the database service, run:
+#   docker-compose --profile with-db up
+#
+version: '3'
+
+services:
+  kippo:
+    image: kippo
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: kippo
+    restart: unless-stopped
+    ports:
+      - "2222:2222"
+    # logs and configuration should be kept outside the image
+    volumes:
+      - ./log:/app/log
+      - ./dl:/app/dl
+      - ./data:/app/data
+      - ./kippo.cfg:/app/kippo.cfg
+  kippodb:
+    image: mariadb
+    container_name: kippodb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: kippo
+      MYSQL_USER: kippo
+      MYSQL_PASSWORD: kippopw
+    volumes:
+      - ./db/mysql/data:/var/lib/mysql
+      - ./db/mysql/docker-initdb.d:/docker-entrypoint-initdb.d
+      - ./doc/sql:/sql-scripts
+    profiles:
+      - with-db
+
+#    ports:
+#      - "3306:3306"
