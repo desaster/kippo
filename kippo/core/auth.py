@@ -20,69 +20,59 @@ class UserDB(object):
     def load(self):
         '''load the user db'''
 
-        userdb_file = '%s/userdb.txt' % \
-            (config().get('honeypot', 'data_path'),)
+        userdb_file = f"{config().get('honeypot', 'data_path')}/userdb.txt"
 
-        f = open(userdb_file, 'r')
-        while True:
-            line = f.readline()
-            if not line:
-                break
+        with open(userdb_file, 'r') as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
 
-            line = string.strip(line)
-            if not line:
-                continue
+                line = string.strip(line)
+                if not line:
+                    continue
 
-            (login, uid_str, passwd) = line.split(':', 2)
+                (login, uid_str, passwd) = line.split(':', 2)
 
-            uid = 0
-            try:
-                uid = int(uid_str)
-            except ValueError:
-                uid = 1001
+                uid = 0
+                try:
+                    uid = int(uid_str)
+                except ValueError:
+                    uid = 1001
 
-            self.userdb.append((login, uid, passwd))
-
-        f.close()
+                self.userdb.append((login, uid, passwd))
 
     def save(self):
         '''save the user db'''
 
-        userdb_file = '%s/userdb.txt' % \
-            (config().get('honeypot', 'data_path'),)
+        userdb_file = f"{config().get('honeypot', 'data_path')}/userdb.txt"
 
-        # Note: this is subject to races between kippo instances, but hey ...
-        f = open(userdb_file, 'w')
-        for (login, uid, passwd) in self.userdb:
-            f.write('%s:%d:%s\n' % (login, uid, passwd))
-        f.close()
+        with open(userdb_file, 'w') as f:
+            for (login, uid, passwd) in self.userdb:
+                f.write('%s:%d:%s\n' % (login, uid, passwd))
 
     def checklogin(self, thelogin, thepasswd):
         '''check entered username/password against database'''
         '''note that it allows multiple passwords for a single username'''
 
-        for (login, uid, passwd) in self.userdb:
-            if login == thelogin and passwd in (thepasswd, '*'):
-                return True
-        return False
+        return any(
+            login == thelogin and passwd in (thepasswd, '*')
+            for login, uid, passwd in self.userdb
+        )
 
     def user_exists(self, thelogin):
-        for (login, uid, passwd) in self.userdb:
-            if login == thelogin:
-                return True
-        return False
+        return any(login == thelogin for login, uid, passwd in self.userdb)
 
     def user_password_exists(self, thelogin, thepasswd):
-        for (login, uid, passwd) in self.userdb:
-            if login == thelogin and passwd == thepasswd:
-                return True
-        return False
+        return any(
+            login == thelogin and passwd == thepasswd
+            for login, uid, passwd in self.userdb
+        )
 
     def getUID(self, loginname):
-        for (login, uid, passwd) in self.userdb:
-            if loginname == login:
-                return uid
-        return 1001
+        return next(
+            (uid for login, uid, passwd in self.userdb if loginname == login), 1001
+        )
 
     def allocUID(self):
         '''allocate the next UID'''

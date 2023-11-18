@@ -1,10 +1,13 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-from twisted.internet import protocol
-from twisted.conch import telnet, recvline
-from kippo.core import ttylog
 import time
+
+from twisted.conch import telnet, recvline
+from twisted.internet import protocol
+
+from kippo.core import ttylog
+
 
 class Interact(telnet.Telnet):
 
@@ -43,7 +46,7 @@ class Interact(telnet.Telnet):
                 if len(pieces) > 1:
                     args = pieces[1]
                 try:
-                    func = getattr(self, 'cmd_' + cmd)
+                    func = getattr(self, f'cmd_{cmd}')
                 except AttributeError:
                     self.transport.write('** Unknown command.\r\n')
                     return
@@ -51,15 +54,10 @@ class Interact(telnet.Telnet):
             else:
                 self.cmdbuf += bytes
 
-        # in non-command mode we are passing input to the session we are
-        # watching
         else:
             for c in bytes:
-                if ord(c) == 27: # escape
-                    self.interacting.delInteractor(self)
-                    self.interacting = None
-                    self.transport.write(
-                        '\r\n** Interactive session closed.\r\n')
+                if ord(c) == 27:  # escape
+                    self.handle_session_closure('\r\n** Interactive session closed.\r\n')
                     return
             if not self.readonly:
                 if type(bytes) == type(''):
@@ -73,17 +71,20 @@ class Interact(telnet.Telnet):
     def sessionWrite(self, data):
         buf, prev = '', ''
         for c in data:
-            if c == '\n' and prev != '\r':
-                buf += '\r\n'
-            else:
-                buf += c
+            buf += '\r\n' if c == '\n' and prev != '\r' else c
             prev = c
         self.transport.write(buf)
 
     def sessionClosed(self):
+        self.handle_session_closure(
+            '\r\n** Interactive session disconnected.\r\n'
+        )
+
+    # TODO Rename this here and in `applicationDataReceived` and `sessionClosed`
+    def handle_session_closure(self, arg0):
         self.interacting.delInteractor(self)
         self.interacting = None
-        self.transport.write('\r\n** Interactive session disconnected.\r\n')
+        self.transport.write(arg0)
 
     def cmd_hijack(self, args):
         self.cmd_view(args)
@@ -114,11 +115,11 @@ class Interact(telnet.Telnet):
         for s in self.honeypotFactory.sessions:
             session = self.honeypotFactory.sessions[s]
             self.transport.write('%s %s %s\r\n' % \
-                (str(s).ljust(4),
-                session.realClientIP.ljust(15),
-                session.clientVersion))
+                                 (str(s).ljust(4),
+                                  session.realClientIP.ljust(15),
+                                  session.clientVersion))
 
-    def cmd_help(self, args = ''):
+    def cmd_help(self, args=''):
         self.transport.write('List of commands:\r\n')
         self.transport.write(' list       - list all active sessions\r\n')
         self.transport.write(
@@ -144,8 +145,9 @@ class Interact(telnet.Telnet):
                 return
         self.transport.write('** No such session found.\r\n')
 
-    def cmd_exit(self, args = ''):
+    def cmd_exit(self, args=''):
         self.transport.loseConnection()
+
 
 def makeInteractFactory(honeypotFactory):
     ifactory = protocol.Factory()

@@ -8,6 +8,7 @@ from kippo.core.honeypot import HoneyPotCommand
 commands = {}
 clist = []
 
+
 class command_orly(HoneyPotCommand):
     def start(self):
         self.orly()
@@ -29,7 +30,10 @@ class command_orly(HoneyPotCommand):
             self.exit()
             return
         self.orly()
+
+
 clist.append(command_orly)
+
 
 class command_wargames(HoneyPotCommand):
     def start(self):
@@ -37,19 +41,28 @@ class command_wargames(HoneyPotCommand):
 
     def lineReceived(self, data):
         self.writeln('A strange game. ' + \
-            'The only winning move is not to play.  ' + \
-            'How about a nice game of chess?')
+                     'The only winning move is not to play.  ' + \
+                     'How about a nice game of chess?')
         self.exit()
+
+
 clist.append(command_wargames)
+
 
 class command_libgnome(HoneyPotCommand):
     def call(self):
-        self.writeln('error while loading shared libraries: libgnome.so.32: cannot open shared object file: No such file or directory')
+        self.writeln(
+            'error while loading shared libraries: libgnome.so.32: cannot open shared object file: No such file or directory')
+
+
 clist.append(command_libgnome)
+
 
 class command_xconnect(HoneyPotCommand):
     def call(self):
         self.writeln('unable to open display ":0"')
+
+
 clist.append(command_xconnect)
 
 # vim: set sw=4 et:

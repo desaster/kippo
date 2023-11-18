@@ -1,7 +1,9 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import re, time, socket
+import re
+import time
+
 
 class DBLogger(object):
     def __init__(self, cfg):
@@ -19,34 +21,33 @@ class DBLogger(object):
         # on scope changes.
         self.re_map = [(re.compile(x[0]), x[1]) for x in (
             ('^connection lost$',
-                self._connectionLost),
+             self._connectionLost),
             ('^login attempt \[(?P<username>.*)/(?P<password>.*)\] failed',
-                self.handleLoginFailed),
+             self.handleLoginFailed),
             ('^login attempt \[(?P<username>.*)/(?P<password>.*)\] succeeded',
-                self.handleLoginSucceeded),
+             self.handleLoginSucceeded),
             ('^Opening TTY log: (?P<logfile>.*)$',
-                self.handleTTYLogOpened),
+             self.handleTTYLogOpened),
             ('^:dispatch: Command found: (?P<input>.*)$',
-                self.handleCommand),
+             self.handleCommand),
             ('^:dispatch: Command not found: (?P<input>.*)$',
-                self.handleUnknownCommand),
+             self.handleUnknownCommand),
             ('^:dispatch: Saving URL \((?P<url>.*)\) to (?P<outfile>.*)$',
-                self.handleFileDownload),
+             self.handleFileDownload),
             ('^INPUT \((?P<realm>[a-zA-Z0-9]+)\): (?P<input>.*)$',
-                self.handleInput),
+             self.handleInput),
             ('^Terminal size: (?P<height>[0-9]+) (?P<width>[0-9]+)$',
-                self.handleTerminalSize),
+             self.handleTerminalSize),
             ('^Remote SSH version: (?P<version>.*)$',
-                self.handleClientVersion),
-            )]
+             self.handleClientVersion),
+        )]
         self.start(cfg)
 
     def logDispatch(self, sessionid, msg):
         if sessionid not in self.sessions.keys():
             return
         for regex, func in self.re_map:
-            match = regex.match(msg)
-            if match:
+            if match := regex.match(msg):
                 func(self.sessions[sessionid], match.groupdict())
                 break
 
@@ -69,7 +70,7 @@ class DBLogger(object):
         if match:
             sessionid = int(match.groups()[4])
             self.sessions[sessionid] = \
-                self.createSession(
+                    self.createSession(
                     match.groups()[0], int(match.groups()[1]),
                     match.groups()[2], int(match.groups()[3]))
             return
@@ -81,8 +82,7 @@ class DBLogger(object):
             return
         message = ev['message'][0]
         for regex, func in self.re_map:
-            match = regex.match(message)
-            if match:
+            if match := regex.match(message):
                 func(self.sessions[sessionid], match.groupdict())
                 break
 

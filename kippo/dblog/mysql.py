@@ -1,8 +1,11 @@
-from kippo.core import dblog
+import MySQLdb
+import uuid
 from twisted.enterprise import adbapi
 from twisted.internet import defer
 from twisted.python import log
-import MySQLdb, uuid
+
+from kippo.core import dblog
+
 
 class ReconnectingConnectionPool(adbapi.ConnectionPool):
     """Reconnecting adbapi connection pool for MySQL.
@@ -16,6 +19,7 @@ class ReconnectingConnectionPool(adbapi.ConnectionPool):
     http://twistedmatrix.com/pipermail/twisted-python/2009-July/020007.html
 
     """
+
     def _runInteraction(self, interaction, *args, **kw):
         try:
             return adbapi.ConnectionPool._runInteraction(
@@ -23,12 +27,13 @@ class ReconnectingConnectionPool(adbapi.ConnectionPool):
         except MySQLdb.OperationalError, e:
             if e[0] not in (2006, 2013):
                 raise
-            log.msg("RCP: got error %s, retrying operation" %(e))
+            log.msg("RCP: got error %s, retrying operation" % (e))
             conn = self.connections.get(self.threadID())
             self.disconnect(conn)
             # try the interaction again
             return adbapi.ConnectionPool._runInteraction(
                 self, interaction, *args, **kw)
+
 
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
@@ -37,16 +42,17 @@ class DBLogger(dblog.DBLogger):
         else:
             port = 3306
         self.db = ReconnectingConnectionPool('MySQLdb',
-            host = cfg.get('database_mysql', 'host'),
-            db = cfg.get('database_mysql', 'database'),
-            user = cfg.get('database_mysql', 'username'),
-            passwd = cfg.get('database_mysql', 'password'),
-            port = port,
-            cp_min = 1,
-            cp_max = 1)
+                                             host=cfg.get('database_mysql', 'host'),
+                                             db=cfg.get('database_mysql', 'database'),
+                                             user=cfg.get('database_mysql', 'username'),
+                                             passwd=cfg.get('database_mysql', 'password'),
+                                             port=port,
+                                             cp_min=1,
+                                             cp_max=1)
 
     def sqlerror(self, error):
-        print 'SQL Error:', error.value
+        print
+        'SQL Error:', error.value
 
     def simpleQuery(self, sql, args):
         """ Just run a deferred sql query, only care about errors """
@@ -78,50 +84,49 @@ class DBLogger(dblog.DBLogger):
             (sid, self.nowUnix(), id, peerIP))
 
     def handleConnectionLost(self, session, args):
-        ttylog = self.ttylog(session)
-        if ttylog:
+        if ttylog := self.ttylog(session):
             self.simpleQuery(
                 'INSERT INTO `ttylog` (`session`, `ttylog`) VALUES (%s, %s)',
                 (session, self.ttylog(session)))
         self.simpleQuery(
             'UPDATE `sessions` SET `endtime` = FROM_UNIXTIME(%s)' + \
-            ' WHERE `id` = %s',
+                ' WHERE `id` = %s',
             (self.nowUnix(), session))
 
     def handleLoginFailed(self, session, args):
         self.simpleQuery('INSERT INTO `auth` (`session`, `success`' + \
-            ', `username`, `password`, `timestamp`)' + \
-            ' VALUES (%s, %s, %s, %s, FROM_UNIXTIME(%s))',
-            (session, 0, args['username'], args['password'], self.nowUnix()))
+                         ', `username`, `password`, `timestamp`)' + \
+                         ' VALUES (%s, %s, %s, %s, FROM_UNIXTIME(%s))',
+                         (session, 0, args['username'], args['password'], self.nowUnix()))
 
     def handleLoginSucceeded(self, session, args):
         self.simpleQuery('INSERT INTO `auth` (`session`, `success`' + \
-            ', `username`, `password`, `timestamp`)' + \
-            ' VALUES (%s, %s, %s, %s, FROM_UNIXTIME(%s))',
-            (session, 1, args['username'], args['password'], self.nowUnix()))
+                         ', `username`, `password`, `timestamp`)' + \
+                         ' VALUES (%s, %s, %s, %s, FROM_UNIXTIME(%s))',
+                         (session, 1, args['username'], args['password'], self.nowUnix()))
 
     def handleCommand(self, session, args):
         self.simpleQuery('INSERT INTO `input`' + \
-            ' (`session`, `timestamp`, `success`, `input`)' + \
-            ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
-            (session, self.nowUnix(), 1, args['input']))
+                         ' (`session`, `timestamp`, `success`, `input`)' + \
+                         ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
+                         (session, self.nowUnix(), 1, args['input']))
 
     def handleUnknownCommand(self, session, args):
         self.simpleQuery('INSERT INTO `input`' + \
-            ' (`session`, `timestamp`, `success`, `input`)' + \
-            ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
-            (session, self.nowUnix(), 0, args['input']))
+                         ' (`session`, `timestamp`, `success`, `input`)' + \
+                         ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
+                         (session, self.nowUnix(), 0, args['input']))
 
     def handleInput(self, session, args):
         self.simpleQuery('INSERT INTO `input`' + \
-            ' (`session`, `timestamp`, `realm`, `input`)' + \
-            ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
-            (session, self.nowUnix(), args['realm'], args['input']))
+                         ' (`session`, `timestamp`, `realm`, `input`)' + \
+                         ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
+                         (session, self.nowUnix(), args['realm'], args['input']))
 
     def handleTerminalSize(self, session, args):
         self.simpleQuery('UPDATE `sessions` SET `termsize` = %s' + \
-            ' WHERE `id` = %s',
-            ('%sx%s' % (args['width'], args['height']), session))
+                         ' WHERE `id` = %s',
+                         ('%sx%s' % (args['width'], args['height']), session))
 
     @defer.inlineCallbacks
     def handleClientVersion(self, session, args):
@@ -142,8 +147,8 @@ class DBLogger(dblog.DBLogger):
 
     def handleFileDownload(self, session, args):
         self.simpleQuery('INSERT INTO `downloads`' + \
-            ' (`session`, `timestamp`, `url`, `outfile`)' + \
-            ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
-            (session, self.nowUnix(), args['url'], args['outfile']))
+                         ' (`session`, `timestamp`, `url`, `outfile`)' + \
+                         ' VALUES (%s, FROM_UNIXTIME(%s), %s, %s)',
+                         (session, self.nowUnix(), args['url'], args['outfile']))
 
 # vim: set sw=4 et:
