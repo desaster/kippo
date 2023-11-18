@@ -1,17 +1,23 @@
 # Copyright (c) 2009 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-from kippo.core.honeypot import HoneyPotCommand
+import getopt
+import hashlib
+import re
+import time
+
 from twisted.internet import reactor
-import time, re, hashlib, getopt
+
+from kippo.core.honeypot import HoneyPotCommand
 
 commands = {}
+
 
 class command_ssh(HoneyPotCommand):
     def start(self):
         try:
             optlist, args = getopt.getopt(self.args,
-                '-1246AaCfgKkMNnqsTtVvXxYb:c:D:e:F:i:L:l:m:O:o:p:R:S:w:')
+                                          '-1246AaCfgKkMNnqsTtVvXxYb:c:D:e:F:i:L:l:m:O:o:p:R:S:w:')
         except getopt.GetoptError, err:
             self.writeln('Unrecognized option')
             self.exit()
@@ -23,7 +29,7 @@ class command_ssh(HoneyPotCommand):
                     '           [-l login_name] [-m mac_spec] [-O ctl_cmd] [-o option] [-p port]',
                     '           [-R [bind_address:]port:host:hostport] [-S ctl_path]',
                     '           [-w local_tun[:remote_tun]] [user@]hostname [command]',
-                    ):
+            ):
                 self.writeln(l)
             self.exit()
             return
@@ -39,12 +45,12 @@ class command_ssh(HoneyPotCommand):
         else:
             s = hashlib.md5(host).hexdigest()
             self.ip = '.'.join([str(int(x, 16)) for x in
-                (s[0:2], s[2:4], s[4:6], s[6:8])])
+                                (s[0:2], s[2:4], s[4:6], s[6:8])])
         self.host = host
         self.user = user
 
         self.writeln('The authenticity of host \'%s (%s)\' can\'t be established.' % \
-            (self.host, self.ip))
+                     (self.host, self.ip))
         self.writeln('RSA key fingerprint is 9d:30:97:8a:9e:48:0d:de:04:8d:76:3a:7b:4b:30:f8.')
         self.write('Are you sure you want to continue connecting (yes/no)? ')
         self.callbacks = [self.yesno, self.wait]
@@ -71,16 +77,20 @@ class command_ssh(HoneyPotCommand):
             self.honeypot.cwd = '/'
         self.honeypot.password_input = False
         self.writeln(
-            'Linux %s 2.6.26-2-686 #1 SMP Wed Nov 4 20:45:37 UTC 2009 i686' % \
-            self.honeypot.hostname)
-        self.writeln('Last login: %s from 192.168.9.4' % \
-            time.ctime(time.time() - 123123))
+            f'Linux {self.honeypot.hostname} 2.6.26-2-686 #1 SMP Wed Nov 4 20:45:37 UTC 2009 i686'
+        )
+        self.writeln(
+            f'Last login: {time.ctime(time.time() - 123123)} from 192.168.9.4'
+        )
         self.exit()
 
     def lineReceived(self, line):
-        print 'INPUT (ssh):', line
+        print
+        'INPUT (ssh):', line
         if len(self.callbacks):
             self.callbacks.pop(0)(line)
+
+
 commands['/usr/bin/ssh'] = command_ssh
 
 # vim: set sw=4 et:
