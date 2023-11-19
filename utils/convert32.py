@@ -8,7 +8,8 @@
 #
 # Before doing anything, backing up your old logs is a good idea!
 
-import sys, struct
+import struct
+import sys
 
 if __name__ == '__main__':
     ssize = struct.calcsize('iLiiLL')
@@ -20,7 +21,7 @@ if __name__ == '__main__':
         except struct.error:
             break
         sys.stdout.write(struct.pack('<iLiiLL',
-            op, tty, length, dir, sec, usec))
+                                     op, tty, length, dir, sec, usec))
         sys.stdout.write(data)
 
 # vim: set sw=4 et:

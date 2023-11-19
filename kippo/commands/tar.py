@@ -1,21 +1,25 @@
 # Copyright (c) 2009 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-from kippo.core.honeypot import HoneyPotCommand
-from kippo.core.fs import *
+import os
+import random
+import tarfile
+
 from kippo.commands import dice, malware
-import time, random, tarfile, os
+from kippo.core.fs import *
+from kippo.core.honeypot import HoneyPotCommand
 
 commands = {}
 
+
 def pick_handler(cmd, size):
     if size in malware.slist:
-        handler = malware.slist[size]
+        return malware.slist[size]
     elif cmd in malware.clist:
-        handler = malware.clist[cmd]
+        return malware.clist[cmd]
     else:
-        handler = random.choice(dice.clist)
-    return handler
+        return random.choice(dice.clist)
+
 
 class command_tar(HoneyPotCommand):
     def mkfullpath(self, path, f):
@@ -33,17 +37,11 @@ class command_tar(HoneyPotCommand):
 
         filename = self.args[1]
 
-        extract = False
-        if 'x' in self.args[0]:
-            extract = True
-        verbose = False
-        if 'v' in self.args[0]:
-            verbose = True
-
+        extract = 'x' in self.args[0]
+        verbose = 'v' in self.args[0]
         path = self.fs.resolve_path(filename, self.honeypot.cwd)
         if not path or not self.honeypot.fs.exists(path):
-            self.writeln('tar: %s: Cannot open: No such file or directory' % \
-                filename)
+            self.writeln(f'tar: {filename}: Cannot open: No such file or directory')
             self.writeln('tar: Error is not recoverable: exiting now')
             self.writeln('tar: Child returned status 2')
             self.writeln('tar: Error exit delayed from previous errors')
@@ -58,7 +56,7 @@ class command_tar(HoneyPotCommand):
 
         try:
             t = tarfile.open(f[A_REALFILE])
-        except:
+        except Exception:
             self.writeln('tar: this does not look like a tar archive')
             self.writeln('tar: skipping to next header')
             self.writeln('tar: error exit delayed from previous errors')
@@ -76,9 +74,12 @@ class command_tar(HoneyPotCommand):
                 self.mkfullpath(os.path.dirname(dest), f)
                 self.fs.mkfile(dest, 0, 0, f.size, f.mode, f.mtime)
                 self.honeypot.commands[dest] = \
-                    pick_handler(os.path.basename(dest), f.size)
+                                        pick_handler(os.path.basename(dest), f.size)
             else:
-                print 'tar: skipping [%s]' % f.name
+                print
+                f'tar: skipping [{f.name}]'
+
+
 commands['/bin/tar'] = command_tar
 
 # vim: set sw=4 et:

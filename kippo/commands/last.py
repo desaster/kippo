@@ -5,13 +5,13 @@ from kippo.core.honeypot import HoneyPotCommand
 from kippo.core.fs import *
 from kippo.core.config import config
 from kippo.core import utils
-import stat, time, anydbm
 
 commands = {}
 
+
 class command_last(HoneyPotCommand):
     def call(self):
-        fn = '%s/lastlog.txt' % (config().get('honeypot', 'data_path'),)
+        fn = f"{config().get('honeypot', 'data_path')}/lastlog.txt"
         if not os.path.exists(fn):
             return
         l = list(self.args)
@@ -26,6 +26,8 @@ class command_last(HoneyPotCommand):
                 numlines = int(l.pop(0))
         data = utils.tail(file(fn), numlines)
         self.writeln(''.join(data))
+
+
 commands['/usr/bin/last'] = command_last
 
 # vim: set sw=4 et:

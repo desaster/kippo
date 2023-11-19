@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-import os, pickle, sys, locale
+import os
+import pickle
+import sys
 from stat import *
 
-def recurse(root, tree, count = 0):
+
+def recurse(root, tree, count=0):
     A_NAME, A_TYPE, A_UID, A_GID, A_SIZE, A_MODE, \
         A_CTIME, A_CONTENTS, A_TARGET, A_REALFILE = range(0, 10)
     T_LINK, T_DIR, T_FILE, T_BLK, T_CHR, T_SOCK, T_FIFO = range(0, 7)
@@ -14,7 +17,7 @@ def recurse(root, tree, count = 0):
                 '/root/fs.pickle',
                 '/root/createfs.py',
                 '/root/.bash_history',
-                ):
+        ):
             continue
 
         try:
@@ -26,7 +29,7 @@ def recurse(root, tree, count = 0):
             continue
 
         entry = [name, T_FILE, s.st_uid, s.st_gid, s.st_size, s.st_mode, \
-            int(s.st_ctime), [], None, None]
+                 int(s.st_ctime), [], None, None]
 
         if S_ISLNK(s[ST_MODE]):
             entry[A_TYPE] = T_LINK
@@ -46,15 +49,16 @@ def recurse(root, tree, count = 0):
         elif S_ISFIFO(s[ST_MODE]):
             entry[A_TYPE] = T_FIFO
         else:
-            sys.stderr.write('We should handle %s' % path)
+            sys.stderr.write(f'We should handle {path}')
             sys.exit(1)
 
         tree.append(entry)
 
+
 if __name__ == '__main__':
     A_NAME, A_TYPE, A_UID, A_GID, A_SIZE, A_MODE, \
-        A_CTIME, A_CONTENTS, A_TARGET, A_REALFILE = range(0, 10)
-    T_LINK, T_DIR, T_FILE, T_BLK, T_CHR, T_SOCK, T_FIFO = range(0, 7)
+        A_CTIME, A_CONTENTS, A_TARGET, A_REALFILE = range(10)
+    T_LINK, T_DIR, T_FILE, T_BLK, T_CHR, T_SOCK, T_FIFO = range(7)
 
     tree = ['/', T_DIR, 0, 0, 0, 0, 0, [], '']
     # change to / to recurse a whole server:
@@ -62,4 +66,5 @@ if __name__ == '__main__':
 
     sys.stderr.write('Doing stuff\n')
 
-    print pickle.dumps(tree)
+    print
+    pickle.dumps(tree)

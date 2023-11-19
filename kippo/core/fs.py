@@ -1,7 +1,10 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import os, time, fnmatch
+import fnmatch
+import os
+import time
+
 from kippo.core.config import config
 
 A_NAME, \
@@ -13,20 +16,23 @@ A_NAME, \
     A_CTIME, \
     A_CONTENTS, \
     A_TARGET, \
-    A_REALFILE = range(0, 10)
+    A_REALFILE = range(10)
 T_LINK, \
     T_DIR, \
     T_FILE, \
     T_BLK, \
     T_CHR, \
     T_SOCK, \
-    T_FIFO = range(0, 7)
+    T_FIFO = range(7)
+
 
 class TooManyLevels(Exception):
     pass
 
+
 class FileNotFound(Exception):
     pass
+
 
 class HoneyPotFilesystem(object):
     def __init__(self, fs):
@@ -43,9 +49,7 @@ class HoneyPotFilesystem(object):
         else:
             cwd = [x for x in cwd.split('/') if len(x) and x is not None]
 
-        while 1:
-            if not len(pieces):
-                break
+        while 1 and len(pieces):
             piece = pieces.pop(0)
             if piece == '..':
                 if len(cwd): cwd.pop()
@@ -54,7 +58,7 @@ class HoneyPotFilesystem(object):
                 continue
             cwd.append(piece)
 
-        return '/%s' % '/'.join(cwd)
+        return f"/{'/'.join(cwd)}"
 
     def resolve_path_wc(self, path, cwd):
         pieces = path.rstrip('/').split('/')
@@ -64,9 +68,10 @@ class HoneyPotFilesystem(object):
         else:
             cwd, pieces = [], pieces[1:]
         found = []
+
         def foo(p, cwd):
             if not len(p):
-                found.append('/%s' % '/'.join(cwd))
+                found.append(f"/{'/'.join(cwd)}")
             elif p[0] == '.':
                 foo(p[1:], cwd)
             elif p[0] == '..':
@@ -76,6 +81,7 @@ class HoneyPotFilesystem(object):
                 matches = [x for x in names if fnmatch.fnmatchcase(x, p[0])]
                 for match in matches:
                     foo(p[1:], cwd + [match])
+
         foo(pieces, cwd)
         return found
 
@@ -96,47 +102,45 @@ class HoneyPotFilesystem(object):
         if not f[A_REALFILE] and os.path.exists(realfile) and \
                 not os.path.islink(realfile) and os.path.isfile(realfile) and \
                 f[A_SIZE] < 25000000:
-            print 'Updating realfile to %s' % realfile
+            print
+            f'Updating realfile to {realfile}'
             f[A_REALFILE] = realfile
 
     def realfile(self, f, path):
         self.update_realfile(f, path)
-        if f[A_REALFILE]:
-            return f[A_REALFILE]
-        return None
+        return f[A_REALFILE] or None
 
     def getfile(self, path):
         if path == '/':
             return self.fs
         pieces = path.strip('/').split('/')
         p = self.fs
-        while 1:
-            if not len(pieces):
-                break
+        while 1 and len(pieces):
             piece = pieces.pop(0)
             if piece not in [x[A_NAME] for x in p[A_CONTENTS]]:
                 return False
             p = [x for x in p[A_CONTENTS] \
-                if x[A_NAME] == piece][0]
+                 if x[A_NAME] == piece][0]
         return p
 
-    def file_contents(self, target, count = 0):
+    def file_contents(self, target, count=0):
         if count > 10:
             raise TooManyLevels
         path = self.resolve_path(target, os.path.dirname(target))
-        print '%s resolved into %s' % (target, path)
+        print
+        f'{target} resolved into {path}'
         if not path or not self.exists(path):
             raise FileNotFound
         f = self.getfile(path)
         if f[A_TYPE] == T_LINK:
             return self.file_contents(f[A_TARGET], count + 1)
 
-        realfile = self.realfile(f, '%s/%s' % \
-            (config().get('honeypot', 'contents_path'), path))
-        if realfile:
+        if realfile := self.realfile(
+                f, f"{config().get('honeypot', 'contents_path')}/{path}"
+        ):
             return file(realfile, 'rb').read()
 
-    def mkfile(self, path, uid, gid, size, mode, ctime = None):
+    def mkfile(self, path, uid, gid, size, mode, ctime=None):
         if self.newcount > 10000:
             return False
         if ctime is None:
@@ -146,11 +150,11 @@ class HoneyPotFilesystem(object):
         if outfile in [x[A_NAME] for x in dir]:
             dir.remove([x for x in dir if x[A_NAME] == outfile][0])
         dir.append([outfile, T_FILE, uid, gid, size, mode, ctime, [],
-            None, None])
+                    None, None])
         self.newcount += 1
         return True
 
-    def mkdir(self, path, uid, gid, size, mode, ctime = None):
+    def mkdir(self, path, uid, gid, size, mode, ctime=None):
         if self.newcount > 10000:
             return False
         if ctime is None:
@@ -162,7 +166,7 @@ class HoneyPotFilesystem(object):
         except IndexError:
             return False
         dir.append([os.path.basename(path), T_DIR, uid, gid, size, mode,
-            ctime, [], None, None])
+                    ctime, [], None, None])
         self.newcount += 1
         return True
 
@@ -170,11 +174,12 @@ class HoneyPotFilesystem(object):
         if path == '/':
             return True
         dir = self.get_path(os.path.dirname(path))
-        l = [x for x in dir
-            if x[A_NAME] == os.path.basename(path) and
-            x[A_TYPE] == T_DIR]
-        if l:
-            return True
-        return False
+        return bool(
+            l := [
+                x
+                for x in dir
+                if x[A_NAME] == os.path.basename(path) and x[A_TYPE] == T_DIR
+            ]
+        )
 
 # vim: set sw=4 et:

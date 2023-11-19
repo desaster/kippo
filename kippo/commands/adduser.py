@@ -1,14 +1,16 @@
 # Copyright (c) 2010 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-from twisted.internet import reactor, defer
-from twisted.internet.defer import inlineCallbacks
+import random
+
+from twisted.internet import reactor
+
 from kippo.core.honeypot import HoneyPotCommand
-import random, re
 
 commands = {}
 
 O_O, O_Q, O_P = 1, 2, 3
+
 
 class command_adduser(HoneyPotCommand):
     def start(self):
@@ -51,7 +53,7 @@ class command_adduser(HoneyPotCommand):
             (O_O, 'Deleting group `%(username)s\' (1001) ...\n'),
             (O_O, 'Deleting home directory `/home/%(username)s\' ...\n'),
             (O_Q, 'Try again? [Y/n] '),
-            ]
+        ]
         self.do_output()
 
     def do_output(self):
@@ -67,9 +69,8 @@ class command_adduser(HoneyPotCommand):
             return
         if l[0] == O_Q:
             return
-        else:
-            self.item += 1
-            self.schedule_next()
+        self.item += 1
+        self.schedule_next()
 
     def schedule_next(self):
         self.scheduled = reactor.callLater(
@@ -88,6 +89,8 @@ class command_adduser(HoneyPotCommand):
             self.item += 1
         self.schedule_next()
         self.honeypot.password_input = False
+
+
 commands['/usr/sbin/adduser'] = command_adduser
 commands['/usr/sbin/useradd'] = command_adduser
 
