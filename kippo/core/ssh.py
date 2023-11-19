@@ -1,27 +1,29 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
+import contextlib
+import os
+import time
+
+import ConfigParser
 import twisted
-from twisted.cred import portal
 from twisted.conch import avatar, interfaces as conchinterfaces
-from twisted.conch.ssh import factory, userauth, connection, keys, session, transport
 from twisted.conch.openssh_compat import primes
+from twisted.conch.ssh import factory, userauth, connection, keys, session, transport
+from twisted.conch.ssh.common import NS
+from twisted.cred import portal
 from twisted.python import log
 from zope.interface import implements
 
-import os
-import time
-import ConfigParser
-
-from kippo.core import ttylog, utils
-from kippo.core.config import config
 import kippo.core.auth
 import kippo.core.honeypot
-import kippo.core.ssh
 import kippo.core.protocol
+import kippo.core.ssh
 from kippo import core
+from kippo.core import ttylog, utils
+from kippo.core.config import config
 
-from twisted.conch.ssh.common import NS, getNS
+
 class HoneyPotSSHUserAuthServer(userauth.SSHUserAuthServer):
     def serviceStarted(self):
         userauth.SSHUserAuthServer.serviceStarted(self)
@@ -36,8 +38,8 @@ class HoneyPotSSHUserAuthServer(userauth.SSHUserAuthServer):
         try:
             data = file(cfg.get('honeypot', 'banner_file')).read()
         except IOError:
-            print 'Banner file %s does not exist!' % \
-                cfg.get('honeypot', 'banner_file')
+            print
+            f"Banner file {cfg.get('honeypot', 'banner_file')} does not exist!"
             return
         if not data or not len(data.strip()):
             return
@@ -50,12 +52,13 @@ class HoneyPotSSHUserAuthServer(userauth.SSHUserAuthServer):
         self.sendBanner()
         return userauth.SSHUserAuthServer.ssh_USERAUTH_REQUEST(self, packet)
 
+
 # As implemented by Kojoney
 class HoneyPotSSHFactory(factory.SSHFactory):
     services = {
         'ssh-userauth': HoneyPotSSHUserAuthServer,
         'ssh-connection': connection.SSHConnection,
-        }
+    }
 
     # Special delivery to the loggers to avoid scope problems
     def logDispatch(self, sessionid, msg):
@@ -77,7 +80,7 @@ class HoneyPotSSHFactory(factory.SSHFactory):
             if not x.startswith('database_'):
                 continue
             engine = x.split('_')[1]
-            dbengine = 'database_' + engine
+            dbengine = f'database_{engine}'
             lcfg = ConfigParser.ConfigParser()
             lcfg.add_section(dbengine)
             for i in cfg.options(x):
@@ -85,10 +88,11 @@ class HoneyPotSSHFactory(factory.SSHFactory):
             lcfg.add_section('honeypot')
             for i in cfg.options('honeypot'):
                 lcfg.set('honeypot', i, cfg.get('honeypot', i))
-            print 'Loading dblog engine: %s' % (engine,)
+            print
+            f'Loading dblog engine: {engine}'
             dblogger = __import__(
-                'kippo.dblog.%s' % (engine,),
-                globals(), locals(), ['dblog']).DBLogger(lcfg)
+                f'kippo.dblog.{engine}', globals(), locals(), ['dblog']
+            ).DBLogger(lcfg)
             log.startLoggingWithObserver(dblogger.emit, setStdout=False)
             self.dbloggers.append(dblogger)
 
@@ -111,19 +115,16 @@ class HoneyPotSSHFactory(factory.SSHFactory):
         t = HoneyPotTransport()
 
         if cfg.has_option('honeypot', 'ssh_version_string'):
-            t.ourVersionString = cfg.get('honeypot','ssh_version_string')
+            t.ourVersionString = cfg.get('honeypot', 'ssh_version_string')
         else:
             t.ourVersionString = "SSH-2.0-OpenSSH_5.1p1 Debian-5"
 
         t.supportedPublicKeys = self.privateKeys.keys()
 
         for _moduli in _modulis:
-            try:
+            with contextlib.suppress(IOError):
                 self.primes = primes.parseModuliFile(_moduli)
                 break
-            except IOError as err:
-                pass
-
         if not self.primes:
             ske = t.supportedKeyExchanges[:]
             ske.remove('diffie-hellman-group-exchange-sha1')
@@ -131,6 +132,7 @@ class HoneyPotSSHFactory(factory.SSHFactory):
 
         t.factory = self
         return t
+
 
 class HoneyPotRealm:
     implements(portal.IRealm)
@@ -146,15 +148,16 @@ class HoneyPotRealm:
         else:
             raise Exception, "No supported interfaces found."
 
-class HoneyPotTransport(transport.SSHServerTransport):
 
+class HoneyPotTransport(transport.SSHServerTransport):
     hadVersion = False
 
     def connectionMade(self):
-        print 'New connection: %s:%s (%s:%s) [session: %d]' % \
-            (self.transport.getPeer().host, self.transport.getPeer().port,
-            self.transport.getHost().host, self.transport.getHost().port,
-            self.transport.sessionno)
+        print
+        'New connection: %s:%s (%s:%s) [session: %d]' % \
+        (self.transport.getPeer().host, self.transport.getPeer().port,
+         self.transport.getHost().host, self.transport.getHost().port,
+         self.transport.sessionno)
         self.interactors = []
         self.logintime = time.time()
         self.ttylog_open = False
@@ -175,18 +178,19 @@ class HoneyPotTransport(transport.SSHServerTransport):
             self.hadVersion = True
 
     def ssh_KEXINIT(self, packet):
-        print 'Remote SSH version: %s' % (self.otherVersionString,)
+        print
+        f'Remote SSH version: {self.otherVersionString}'
         return transport.SSHServerTransport.ssh_KEXINIT(self, packet)
 
     def lastlogExit(self):
         starttime = time.strftime('%a %b %d %H:%M',
-            time.localtime(self.logintime))
+                                  time.localtime(self.logintime))
         endtime = time.strftime('%H:%M',
-            time.localtime(time.time()))
+                                time.localtime(time.time()))
         duration = utils.durationHuman(time.time() - self.logintime)
         clientIP = self.transport.getPeer().host
         utils.addToLastlog('root\tpts/0\t%s\t%s - %s (%s)' % \
-            (clientIP, starttime, endtime, duration))
+                           (clientIP, starttime, endtime, duration))
 
     # this seems to be the only reliable place of catching lost connection
     def connectionLost(self, reason):
@@ -210,18 +214,21 @@ class HoneyPotTransport(transport.SSHServerTransport):
         @param desc: a descrption of the reason for the disconnection.
         @type desc: C{str}
         """
-        if not 'bad packet length' in desc:
+        if 'bad packet length' not in desc:
             # With python >= 3 we can use super?
             transport.SSHServerTransport.sendDisconnect(self, reason, desc)
         else:
             self.transport.write('Protocol mismatch.\n')
             log.msg('Disconnecting with error, code %s\nreason: %s' % \
-                (reason, desc))
+                        (reason, desc))
             self.transport.loseConnection()
+
 
 class HoneyPotSSHSession(session.SSHSession):
     def request_env(self, data):
-        print 'request_env: %s' % (repr(data))
+        print
+        f'request_env: {repr(data)}'
+
 
 class HoneyPotAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)
@@ -247,21 +254,22 @@ class HoneyPotAvatar(avatar.ConchUser):
         protocol.makeConnection(session.wrapProtocol(serverProtocol))
 
     def getPty(self, terminal, windowSize, attrs):
-        print 'Terminal size: %s %s' % windowSize[0:2]
+        print
+        'Terminal size: %s %s' % windowSize[:2]
         self.windowSize = windowSize
         return None
 
     def execCommand(self, protocol, cmd):
         cfg = config()
         if not cfg.has_option('honeypot', 'exec_enabled') or \
-                cfg.get('honeypot', 'exec_enabled').lower() not in \
-                    ('yes', 'true', 'on'):
-            print 'Exec disabled. Not executing command: "%s"' % cmd
+                            cfg.get('honeypot', 'exec_enabled').lower() not in \
+                            ('yes', 'true', 'on'):
+            print
+            f'Exec disabled. Not executing command: "{cmd}"'
             raise core.exceptions.NotEnabledException, \
-                'exec_enabled not enabled in configuration file!'
-            return
-
-        print 'exec command: "%s"' % cmd
+                            'exec_enabled not enabled in configuration file!'
+        print
+        f'exec command: "{cmd}"'
         serverProtocol = kippo.core.protocol.LoggingServerProtocol(
             kippo.core.protocol.HoneyPotExecProtocol, self, self.env, cmd)
         serverProtocol.makeConnection(protocol)
@@ -276,12 +284,14 @@ class HoneyPotAvatar(avatar.ConchUser):
     def windowChanged(self, windowSize):
         self.windowSize = windowSize
 
+
 def getRSAKeys():
     cfg = config()
     public_key = cfg.get('honeypot', 'rsa_public_key')
     private_key = cfg.get('honeypot', 'rsa_private_key')
     if not (os.path.exists(public_key) and os.path.exists(private_key)):
-        print "Generating new RSA keypair..."
+        print
+        "Generating new RSA keypair..."
         from Crypto.PublicKey import RSA
         from twisted.python import randbytes
         KEY_LENGTH = 2048
@@ -292,7 +302,8 @@ def getRSAKeys():
             f.write(publicKeyString)
         with file(private_key, 'w+b') as f:
             f.write(privateKeyString)
-        print "Done."
+        print
+        "Done."
     else:
         with file(public_key) as f:
             publicKeyString = f.read()
@@ -300,12 +311,14 @@ def getRSAKeys():
             privateKeyString = f.read()
     return publicKeyString, privateKeyString
 
+
 def getDSAKeys():
     cfg = config()
     public_key = cfg.get('honeypot', 'dsa_public_key')
     private_key = cfg.get('honeypot', 'dsa_private_key')
     if not (os.path.exists(public_key) and os.path.exists(private_key)):
-        print "Generating new DSA keypair..."
+        print
+        "Generating new DSA keypair..."
         from Crypto.PublicKey import DSA
         from twisted.python import randbytes
         KEY_LENGTH = 1024
@@ -316,7 +329,8 @@ def getDSAKeys():
             f.write(publicKeyString)
         with file(private_key, 'w+b') as f:
             f.write(privateKeyString)
-        print "Done."
+        print
+        "Done."
     else:
         with file(public_key) as f:
             publicKeyString = f.read()

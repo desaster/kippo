@@ -1,27 +1,30 @@
 # Copyright (c) 2010 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import os, getopt
-from copy import deepcopy, copy
-from kippo.core.honeypot import HoneyPotCommand
+import getopt
+from copy import deepcopy
+
 from kippo.core.fs import *
-from twisted.internet import reactor
+from kippo.core.honeypot import HoneyPotCommand
 
 commands = {}
+
 
 class command_cat(HoneyPotCommand):
     def call(self):
         for arg in self.args:
             path = self.fs.resolve_path(arg, self.honeypot.cwd)
             if self.fs.is_dir(path):
-                self.writeln('cat: %s: Is a directory' % (arg,))
+                self.writeln(f'cat: {arg}: Is a directory')
                 continue
             try:
                 self.write(self.fs.file_contents(path))
-            except:
-                self.writeln('cat: %s: No such file or directory' % (arg,))
+            except Exception:
+                self.writeln(f'cat: {arg}: No such file or directory')
+
 
 commands['/bin/cat'] = command_cat
+
 
 class command_cd(HoneyPotCommand):
     def call(self):
@@ -38,13 +41,16 @@ class command_cd(HoneyPotCommand):
             self.writeln('bash: cd: OLDPWD not set')
             return
         if newdir is None:
-            self.writeln('bash: cd: %s: No such file or directory' % path)
+            self.writeln(f'bash: cd: {path}: No such file or directory')
             return
         if not self.fs.is_dir(newpath):
-            self.writeln('bash: cd: %s: Not a directory' % path)
+            self.writeln(f'bash: cd: {path}: Not a directory')
             return
         self.honeypot.cwd = newpath
+
+
 commands['cd'] = command_cd
+
 
 class command_rm(HoneyPotCommand):
     def call(self):
@@ -61,7 +67,7 @@ class command_rm(HoneyPotCommand):
                     'rm: cannot remove `%s\': No such file or directory' % f)
                 continue
             basename = path.split('/')[-1]
-            contents = [x for x in dir]
+            contents = list(dir)
             for i in dir[:]:
                 if i[A_NAME] == basename:
                     if i[A_TYPE] == T_DIR and not recursive:
@@ -70,7 +76,10 @@ class command_rm(HoneyPotCommand):
                             i[A_NAME])
                     else:
                         dir.remove(i)
+
+
 commands['/bin/rm'] = command_rm
+
 
 class command_cp(HoneyPotCommand):
     def call(self):
@@ -80,7 +89,7 @@ class command_cp(HoneyPotCommand):
             return
         try:
             optlist, args = getopt.gnu_getopt(self.args,
-                '-abdfiHlLPpRrsStTuvx')
+                                              '-abdfiHlLPpRrsStTuvx')
         except getopt.GetoptError, err:
             self.writeln('Unrecognized option')
             return
@@ -98,7 +107,7 @@ class command_cp(HoneyPotCommand):
 
         if len(args) < 2:
             self.writeln("cp: missing destination file operand after `%s'" % \
-                (self.args[0],))
+                         (self.args[0],))
             self.writeln("Try `cp --help' for more information.")
             return
         sources, dest = args[:-1], args[-1]
@@ -120,7 +129,7 @@ class command_cp(HoneyPotCommand):
             parent = os.path.dirname(resolv(dest))
             if not self.fs.exists(parent):
                 self.writeln("cp: cannot create regular file " + \
-                    "`%s': No such file or directory" % (dest,))
+                             "`%s': No such file or directory" % (dest,))
                 return
 
         for src in sources:
@@ -142,7 +151,10 @@ class command_cp(HoneyPotCommand):
                 dir.remove([x for x in dir if x[A_NAME] == outfile][0])
             s[A_NAME] = outfile
             dir.append(s)
+
+
 commands['/bin/cp'] = command_cp
+
 
 class command_mv(HoneyPotCommand):
     def call(self):
@@ -162,7 +174,7 @@ class command_mv(HoneyPotCommand):
 
         if len(args) < 2:
             self.writeln("mv: missing destination file operand after `%s'" % \
-                (self.args[0],))
+                         (self.args[0],))
             self.writeln("Try `mv --help' for more information.")
             return
         sources, dest = args[:-1], args[-1]
@@ -184,8 +196,8 @@ class command_mv(HoneyPotCommand):
             parent = os.path.dirname(resolv(dest))
             if not self.fs.exists(parent):
                 self.writeln("mv: cannot create regular file " + \
-                    "`%s': No such file or directory" % \
-                    (dest,))
+                             "`%s': No such file or directory" % \
+                             (dest,))
                 return
 
         for src in sources:
@@ -208,7 +220,10 @@ class command_mv(HoneyPotCommand):
                 sdir.remove(s)
             else:
                 s[A_NAME] = outfile
+
+
 commands['/bin/mv'] = command_mv
+
 
 class command_mkdir(HoneyPotCommand):
     def call(self):
@@ -224,7 +239,10 @@ class command_mkdir(HoneyPotCommand):
                     'mkdir: cannot create directory `%s\': ' % f + \
                     'No such file or directory')
                 return
+
+
 commands['/bin/mkdir'] = command_mkdir
+
 
 class command_rmdir(HoneyPotCommand):
     def call(self):
@@ -246,12 +264,18 @@ class command_rmdir(HoneyPotCommand):
             for i in dir[:]:
                 if i[A_NAME] == f:
                     dir.remove(i)
+
+
 commands['/bin/rmdir'] = command_rmdir
+
 
 class command_pwd(HoneyPotCommand):
     def call(self):
         self.writeln(self.honeypot.cwd)
+
+
 commands['/bin/pwd'] = command_pwd
+
 
 class command_touch(HoneyPotCommand):
     def call(self):
@@ -262,14 +286,14 @@ class command_touch(HoneyPotCommand):
         for f in self.args:
             path = self.fs.resolve_path(f, self.honeypot.cwd)
             if not self.fs.exists(os.path.dirname(path)):
-                self.writeln(
-                    'touch: cannot touch `%s`: no such file or directory' % \
-                    (path))
+                self.writeln(f'touch: cannot touch `{path}`: no such file or directory')
                 return
             if self.fs.exists(path):
                 # FIXME: modify the timestamp here
                 continue
             self.fs.mkfile(path, 0, 0, 0, 33188)
+
+
 commands['/bin/touch'] = command_touch
 
 # vim: set sw=4 et:

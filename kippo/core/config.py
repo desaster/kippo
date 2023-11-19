@@ -1,7 +1,9 @@
 # Copyright (c) 2009-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
 
-import ConfigParser, os
+import ConfigParser
+import os
+
 
 def config():
     cfg = ConfigParser.ConfigParser()
