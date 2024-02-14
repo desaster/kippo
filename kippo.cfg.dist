@@ -199,3 +199,18 @@ interact_port = 5123
 
 #[database_textlog]
 #logfile = kippo-textlog.log
+
+
+# IRC based logging module
+#
+# Logs to an IRC server. The default settings are shown, nick is randomly
+# generated unless specified. Channel can be either a channel or a nick
+#
+# To enable this module, remove the comments below, including the
+# [database_irc] line.
+#[database_irc]
+#server=irc.efnet.org
+#nick=kippobot
+#channel=#kippo-events
+#ssl=false
+#password=
