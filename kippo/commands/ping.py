@@ -26,13 +26,19 @@ class command_ping(HoneyPotCommand):
             self.exit()
             return
 
-        if re.match('^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-                self.host):
+        if re.match(
+                    '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$',
+                    self.host
+                    ):
             self.ip = self.host
-        else:
+        elif re.match('.*[a-z]{2}$', self.host, re.I):
             s = hashlib.md5(self.host).hexdigest()
             self.ip = '.'.join([str(int(x, 16)) for x in
                 (s[0:2], s[2:4], s[4:6], s[6:8])])
+        else:
+            self.writeln('ping: unknown host %s' % (self.host))
+            self.exit()
+            return
 
         self.writeln('PING %s (%s) 56(84) bytes of data.' % \
             (self.host, self.ip))

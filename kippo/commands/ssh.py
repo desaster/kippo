@@ -34,12 +34,22 @@ class command_ssh(HoneyPotCommand):
         if args[0].count('@'):
             user, host = args[0].split('@', 1)
 
-        if re.match('^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$', host):
+        if re.match(
+                '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$',
+                host
+                ):
             self.ip = host
-        else:
+        elif re.match('.*[a-z]{2}$', host, re.I):
             s = hashlib.md5(host).hexdigest()
             self.ip = '.'.join([str(int(x, 16)) for x in
                 (s[0:2], s[2:4], s[4:6], s[6:8])])
+        else:
+            self.writeln(
+                'ssh: Could not resolve hostname %s: Name or service not known'
+                % (host))
+            self.exit()
+            return
+
         self.host = host
         self.user = user
 
