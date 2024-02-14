@@ -4,11 +4,7 @@
 #
 
 from kippo.core import dblog
-from twisted.enterprise import adbapi
-from twisted.internet import defer
-from twisted.python import log
 import time
-import uuid
 
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
@@ -20,10 +16,7 @@ class DBLogger(dblog.DBLogger):
         self.outfile.flush()
 
     def createSession(self, peerIP, peerPort, hostIP, hostPort):
-        sid = uuid.uuid1().hex
-        sensorname = self.getSensor() or hostIP
-        self.write(sid, 'New connection: %s:%s' % (peerIP, peerPort))
-        return sid
+        return format(peerIP) + " " + format(peerPort)
 
     def handleConnectionLost(self, session, args):
         self.write(session, 'Connection lost')
