@@ -93,9 +93,12 @@ class command_wget(HoneyPotCommand):
         if cfg.has_option('honeypot', 'download_limit_size'):
             self.limit_size = int(cfg.get('honeypot', 'download_limit_size'))
 
-        self.safeoutfile = '%s/%s_%s' % \
+        miliseconds = str("%0.3f" % time.time()).split('.')[1]
+
+        self.safeoutfile = '%s/%s_%s_%s' % \
             (cfg.get('honeypot', 'download_path'),
             time.strftime('%Y%m%d%H%M%S'),
+            miliseconds,
             re.sub('[^A-Za-z0-9]', '_', url))
         self.deferred = self.download(url, outfile, self.safeoutfile)
         if self.deferred:
