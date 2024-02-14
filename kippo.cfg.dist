@@ -199,3 +199,12 @@ interact_port = 5123
 
 #[database_textlog]
 #logfile = kippo-textlog.log
+
+
+#[database_hpfeed]
+#host = 127.0.0.1
+#port = 20000
+#geolitecity=/usr/local/share/GeoIP/GeoLiteCity.dat
+#channel = geoloc.events
+#ident = identhh
+#secret = secrethh
